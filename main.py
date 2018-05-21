@@ -116,7 +116,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
 
 def run():
     print("starting")
-    num_classes = 2
+    num_classes = 3
     image_shape = (160, 576)
     data_dir = '/tmp/data'
     runs_dir = './runs'
@@ -146,7 +146,7 @@ def run():
         print("optimize")
         
         # TODO: Train NN using the train_nn function
-        epochs = 5
+        epochs = 3
         batch_size = 16
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
         print("train_nn")
