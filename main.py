@@ -151,11 +151,9 @@ def run():
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
         print("train_nn")
 
-        # TODO: Save inference data using helper.save_inference_samples
-        helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
-
-        # OPTIONAL: Apply the trained model to a video
-
+        saver = tf.train.Saver()
+        saver.save(sess, './vehicles')
+        print("model saved")
 
 if __name__ == '__main__':
     run()
