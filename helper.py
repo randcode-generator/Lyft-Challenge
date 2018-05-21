@@ -74,28 +74,27 @@ def gen_batch_function(data_folder, image_shape):
         rgb_paths = glob(os.path.join(data_folder, 'CameraRGB', '*.png'))
         random.shuffle(rgb_paths)
         for batch_i in range(0, len(rgb_paths), batch_size):
-            images = []
-            gt_images = []
-            for image_file in image_paths[batch_i:batch_i+batch_size]:
-                gt_image_file = label_paths[os.path.basename(image_file)]
+            rgb_images = []
+            seg_images = []
+            for rgb_image_file in rgb_paths[batch_i:batch_i+batch_size]:
 
-                image = scipy.misc.imresize(scipy.misc.imread(image_file), image_shape)
-                gt_image = scipy.misc.imresize(scipy.misc.imread(gt_image_file), image_shape)
+                filename_w_ext = os.path.basename(rgb_image_file)
+                filename, _ = os.path.splitext(filename_w_ext)
+                seg_image_file = os.path.join(data_folder, 'CameraSeg', filename+".png")
 
-                background_color = np.array([255, 0, 0])
-                gt_bg1 = np.all(gt_image == background_color, axis=2)
+                rgb_image = scipy.misc.imresize(scipy.misc.imread(rgb_image_file), image_shape)
+                seg_image = scipy.misc.imresize(scipy.misc.imread(seg_image_file), image_shape)
+
+                background_color = np.array([10, 0, 0])
+                seg_bg = np.all(seg_image == background_color, axis=2)
                 
-                background_color = np.array([0, 0, 0])
-                gt_bg2 = np.all(gt_image == background_color, axis=2)
+                seg_bg = seg_bg.reshape(*seg_bg.shape, 1)
+                seg_image = np.concatenate((seg_bg, np.invert(seg_bg)), axis=2)
 
-                gt_bg = np.logical_or(gt_bg1, gt_bg2)
-                gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
-                gt_image = np.concatenate((gt_bg, np.invert(gt_bg)), axis=2)
+                rgb_images.append(rgb_image)
+                seg_images.append(seg_image)
 
-                images.append(image)
-                gt_images.append(gt_image)
-
-            yield np.array(images), np.array(gt_images)
+            yield np.array(rgb_images), np.array(seg_images)
     return get_batches_fn
 
 

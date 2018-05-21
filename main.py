@@ -114,8 +114,6 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         print("EPOCH {}...".format(e))
         print("Loss = {:.3f}".format(total_loss))
 
-tests.test_train_nn(train_nn)
-
 def run():
     print("starting")
     num_classes = 2
@@ -148,7 +146,7 @@ def run():
         print("optimize")
         
         # TODO: Train NN using the train_nn function
-        epochs = 20
+        epochs = 15
         batch_size = 16
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
         print("train_nn")
