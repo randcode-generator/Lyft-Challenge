@@ -87,9 +87,13 @@ def gen_batch_function(data_folder, image_shape):
 
                 background_color = np.array([7, 0, 0])
                 seg_bg = np.all(seg_image == background_color, axis=2)
-                
-                seg_bg = seg_bg.reshape(*seg_bg.shape, 1)
-                seg_image = np.concatenate((seg_bg, np.invert(seg_bg)), axis=2)
+                seg_bg_road = seg_bg.reshape(*seg_bg.shape, 1)
+
+                background_color = np.array([10, 0, 0])
+                seg_bg = np.all(seg_image == background_color, axis=2)
+                seg_bg_vehicle = seg_bg.reshape(*seg_bg.shape, 1)
+
+                seg_image = np.concatenate((seg_bg_road, seg_bg_vehicle), axis=2)
 
                 rgb_images.append(rgb_image)
                 seg_images.append(seg_image)
