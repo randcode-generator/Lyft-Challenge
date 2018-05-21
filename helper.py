@@ -99,7 +99,7 @@ def gen_batch_function(data_folder, image_shape):
 
                 allAND = np.logical_or(seg_bg1, seg_bg2)
                 allAND = allAND.reshape(*allAND.shape, 1)
-                seg_image = np.concatenate((seg_bg_road, seg_bg_vehicle, np.invert(allAND)), axis=2)
+                seg_image = np.concatenate((seg_bg_vehicle, seg_bg_road, np.invert(allAND)), axis=2)
 
                 rgb_images.append(rgb_image)
                 seg_images.append(seg_image)
