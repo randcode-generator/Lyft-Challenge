@@ -58,6 +58,20 @@ def maybe_download_pretrained_vgg(data_dir):
         os.remove(os.path.join(vgg_path, vgg_filename))
 
 
+def filterImage(filter, seg_image):
+    background_color = np.array(filter)
+    gt_bg = np.all(seg_image == background_color, axis=2)
+    gt_bg[495:] = 0
+    gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
+    mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
+    return mask
+
+def filterImage_true_false(seg_image):
+    background_color = np.array([0, 0, 0, 0])
+    gt_bg = np.all(seg_image == background_color, axis=2)
+    gt_bg=gt_bg.reshape(*gt_bg.shape, 1)
+    return np.invert(gt_bg)
+
 def gen_batch_function(data_folder, image_shape):
     """
     Generate function to create batches of training data
@@ -85,20 +99,16 @@ def gen_batch_function(data_folder, image_shape):
                 rgb_image = scipy.misc.imresize(scipy.misc.imread(rgb_image_file), image_shape)
                 seg_image = scipy.misc.imresize(scipy.misc.imread(seg_image_file), image_shape)
 
-                background_color = np.array([7, 0, 0])
-                seg_bg = np.all(seg_image == background_color, axis=2)
-                seg_bg[130:] = False
-                seg_bg1 = seg_bg
-                seg_bg_road = seg_bg.reshape(*seg_bg.shape, 1)
+                street_im = filterImage([7, 0, 0], seg_image)
+                street_im = scipy.misc.imresize(street_im, image_shape)
+                seg_bg1=seg_bg_road = filterImage_true_false(street_im)
 
-                background_color = np.array([10, 0, 0])
-                seg_bg = np.all(seg_image == background_color, axis=2)
-                seg_bg[130:] = False
-                seg_bg2 = seg_bg
-                seg_bg_vehicle = seg_bg.reshape(*seg_bg.shape, 1)
+                street_im = filterImage([10, 0, 0], seg_image)
+                street_im = scipy.misc.imresize(street_im, image_shape)
+                seg_bg2=seg_bg_vehicle = filterImage_true_false(street_im)
 
                 allAND = np.logical_or(seg_bg1, seg_bg2)
-                allAND = allAND.reshape(*allAND.shape, 1)
+                
                 seg_image = np.concatenate((seg_bg_vehicle, seg_bg_road, np.invert(allAND)), axis=2)
 
                 rgb_images.append(rgb_image)
