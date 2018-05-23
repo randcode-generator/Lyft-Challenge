@@ -25,13 +25,13 @@ answer_key = {}
 # Frame numbering starts at 1
 frame = 1
 
-meta_graph = tf.train.import_meta_graph("./model/vehicles.meta")
+meta_graph = tf.train.import_meta_graph("/tmp/model/vehicles.meta")
 image_shape = (160, 576)
 
 background_color = np.array([0, 0, 0, 0])
 
 with tf.Session() as sess:
-    meta_graph.restore(sess, tf.train.latest_checkpoint('./model'))
+    meta_graph.restore(sess, tf.train.latest_checkpoint('/tmp/model'))
     graph = sess.graph
     logits = graph.get_tensor_by_name('fcn_logits:0')
     input_image = graph.get_tensor_by_name('image_input:0')
