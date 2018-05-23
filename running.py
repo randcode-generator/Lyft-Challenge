@@ -59,6 +59,7 @@ with tf.Session() as sess:
     scipy.misc.imsave("mask.png", np.array(street_im))
     t_f_vehicle_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
 
+    t_f_vehicle_array[496:] = 0
     c = verify(t_f_vehicle_array, image_org)
     scipy.misc.imsave("final.png", np.array(c))
 
