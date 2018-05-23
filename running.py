@@ -57,7 +57,6 @@ with tf.Session() as sess:
         street_im = scipy.misc.imresize(mask, (600,800))
         t_f_road_array = np.all(street_im == background_color, axis=2).astype('uint8')
 
-        print(t_f_road_array.shape)
         answer_key[frame] = [encode(t_f_vehicle_array), encode(t_f_road_array)]
         frame+=1
 
