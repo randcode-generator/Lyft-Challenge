@@ -42,9 +42,7 @@ with tf.Session() as sess:
     segmentation = (im_softmax > 0.3).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
-    street_im = scipy.misc.toimage(image)
-    street_im.paste(mask, box=None, mask=mask)
-    street_im = scipy.misc.imresize(street_im, (600,800))
+    street_im = scipy.misc.imresize(mask, (600,800))
 
     scipy.misc.imsave("final.png", np.array(street_im))
 
