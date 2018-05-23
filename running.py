@@ -18,7 +18,7 @@ def encode(array):
 	pil_img.save(buff, format="PNG")
 	return base64.b64encode(buff.getvalue()).decode("utf-8")
 
-video = skvideo.io.vread(file)
+#video = skvideo.io.vread(file)
 
 answer_key = {}
 
@@ -35,16 +35,24 @@ with tf.Session() as sess:
     logits = graph.get_tensor_by_name('fcn_logits:0')
     input_image = graph.get_tensor_by_name('image_input:0')
     keep_prob = graph.get_tensor_by_name('keep_prob:0')
-    im_softmax = sess.run(
+    im_softmax_org = sess.run(
         [tf.nn.softmax(logits)],
         {keep_prob: 0.001, input_image: [image]})
-    im_softmax = im_softmax[0][:, 0].reshape(image_shape[0], image_shape[1])
+    background_color = np.array([0, 0, 0, 0])
+
+    im_softmax = im_softmax_org[0][:, 0].reshape(image_shape[0], image_shape[1])
     segmentation = (im_softmax > 0.3).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
     street_im = scipy.misc.imresize(mask, (600,800))
+    t_f_vehicle_array = np.all(street_im == background_color, axis=2)
 
-    scipy.misc.imsave("final.png", np.array(street_im))
+    im_softmax = im_softmax_org[0][:, 1].reshape(image_shape[0], image_shape[1])
+    segmentation = (im_softmax > 0.3).reshape(image_shape[0], image_shape[1], 1)
+    mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
+    mask = scipy.misc.toimage(mask, mode="RGBA")
+    street_im = scipy.misc.imresize(mask, (600,800))
+    t_f_road_array = np.all(street_im == background_color, axis=2)
 
 # for rgb_frame in video:
 	
