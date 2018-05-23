@@ -7,7 +7,7 @@ import scipy.misc
 
 file = sys.argv[-1]
 
-if file == 'demo.py':
+if file == 'running.py':
   print ("Error loading video")
   quit
 
@@ -50,7 +50,7 @@ with tf.Session() as sess:
         street_im = scipy.misc.imresize(mask, (600,800))
         t_f_vehicle_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
         t_f_vehicle_array[496:] = 0
-        
+
         im_softmax = im_softmax_org[0][:, 1].reshape(image_shape[0], image_shape[1])
         segmentation = (im_softmax > 0.3).reshape(image_shape[0], image_shape[1], 1)
         mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
