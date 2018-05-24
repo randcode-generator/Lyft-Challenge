@@ -45,14 +45,14 @@ with tf.Session() as sess:
     input_image = graph.get_tensor_by_name('image_input:0')
     keep_prob = graph.get_tensor_by_name('keep_prob:0')
 
-    image_org=scipy.misc.imread("246.png")
+    image_org=scipy.misc.imread("255.png")
     image = scipy.misc.imresize(image_org, image_shape)
     im_softmax_org = sess.run(
         [tf.nn.softmax(logits)],
         {keep_prob: 0.001, input_image: [image]})
 
     im_softmax = im_softmax_org[0][:, 0].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax > 0.5).reshape(image_shape[0], image_shape[1], 1)
+    segmentation = (im_softmax > 0.6).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
     street_im = scipy.misc.imresize(mask, (600,800))
@@ -64,7 +64,7 @@ with tf.Session() as sess:
     scipy.misc.imsave("final.png", np.array(c))
 
     im_softmax = im_softmax_org[0][:, 1].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax > 0.3).reshape(image_shape[0], image_shape[1], 1)
+    segmentation = (im_softmax > 0.6).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
     street_im = scipy.misc.imresize(mask, (600,800))
