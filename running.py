@@ -24,7 +24,7 @@ answer_key = {}
 frame = 1
 
 meta_graph = tf.train.import_meta_graph("./model/vehicles.meta")
-image_shape = (160, 576)
+image_shape = (288, 384)
 
 background_color = np.array([0, 0, 0, 0])
 
@@ -52,7 +52,7 @@ with tf.Session() as sess:
         {keep_prob: 0.001, input_image: [image]})
 
     im_softmax = im_softmax_org[0][:, 0].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax > 0.6).reshape(image_shape[0], image_shape[1], 1)
+    segmentation = (im_softmax > 0.8).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
     street_im = scipy.misc.imresize(mask, (600,800))
@@ -64,7 +64,7 @@ with tf.Session() as sess:
     scipy.misc.imsave("final.png", np.array(c))
 
     im_softmax = im_softmax_org[0][:, 1].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax > 0.6).reshape(image_shape[0], image_shape[1], 1)
+    segmentation = (im_softmax > 0.8).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
     street_im = scipy.misc.imresize(mask, (600,800))
