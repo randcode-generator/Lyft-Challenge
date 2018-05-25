@@ -119,14 +119,9 @@ def run():
     num_classes = 3
     image_shape = (288, 384)
     data_dir = '/tmp/data'
-    runs_dir = './runs'
 
     # Download pretrained vgg model
     helper.maybe_download_pretrained_vgg(data_dir)
-
-    # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
-    # You'll need a GPU with at least 10 teraFLOPS to train on.
-    #  https://www.cityscapes-dataset.com/
 
     with tf.Session() as sess:
         # Path to vgg model
