@@ -96,9 +96,11 @@ def gen_batch_function(data_folder, image_shape):
                 filename, _ = os.path.splitext(filename_w_ext)
                 seg_image_file = os.path.join(data_folder, 'CameraSeg', filename+".png")
 
-                rgb_image = scipy.misc.imresize(scipy.misc.imread(rgb_image_file), image_shape)
-                seg_image = scipy.misc.imresize(scipy.misc.imread(seg_image_file), image_shape)
+                rgb_image = scipy.misc.imread(rgb_image_file)
+                rgb_image = scipy.misc.imresize(rgb_image, image_shape)
 
+                seg_image = scipy.misc.imread(seg_image_file)
+                
                 street_im = filterImage([7, 0, 0], seg_image)
                 street_im = scipy.misc.imresize(street_im, image_shape)
                 seg_bg1=seg_bg_road = filterImage_true_false(street_im)
