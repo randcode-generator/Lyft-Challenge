@@ -26,7 +26,7 @@ answer_key = {}
 frame = 1
 
 meta_graph = tf.train.import_meta_graph("/tmp/model/vehicles.meta")
-image_shape = (160, 576)
+image_shape = (288, 384)
 
 background_color = np.array([0, 0, 0, 0])
 
@@ -62,21 +62,3 @@ with tf.Session() as sess:
         frame+=1
 
 print (json.dumps(answer_key))
-
-# for rgb_frame in video:
-	
-#     # Grab red channel	
-# 	red = rgb_frame[:,:,0]    
-#     # Look for red cars :)
-# 	binary_car_result = np.where(red>250,1,0).astype('uint8')
-    
-#     # Look for road :)
-# 	binary_road_result = binary_car_result = np.where(red<20,1,0).astype('uint8')
-
-# 	answer_key[frame] = [encode(binary_car_result), encode(binary_road_result)]
-    
-#     # Increment frame
-# 	frame+=1
-
-# Print output in proper json format
-#print (json.dumps(answer_key))
