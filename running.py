@@ -24,7 +24,8 @@ answer_key = {}
 frame = 1
 
 meta_graph = tf.train.import_meta_graph("./model/vehicles.meta")
-image_shape = (192,256)
+image_shape = (96, 128)
+total_size = image_shape[0]*image_shape[1]
 
 background_color = np.array([0, 0, 0, 0])
 
@@ -59,7 +60,7 @@ with tf.Session() as sess:
     print(np.array(im_softmax_org).shape)
 
     
-    im_softmax_org = np.array(im_softmax_org).reshape(2, 49152, 3)
+    im_softmax_org = np.array(im_softmax_org).reshape(2, total_size, 3)
     print(im_softmax_org.shape)
 
     im_softmax = im_softmax_org[1][:, 0].reshape(image_shape[0], image_shape[1])
