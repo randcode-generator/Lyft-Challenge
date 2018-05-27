@@ -33,7 +33,7 @@ background_color = np.array([0, 0, 0, 0])
 
 def postProcessing(im_softmax_org, image_shape):
     im_softmax = im_softmax_org[0][:, 0].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax > 0.95).reshape(image_shape[0], image_shape[1], 1)
+    segmentation = (im_softmax >= 1.0).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
     street_im = scipy.misc.imresize(mask, (600,800))
@@ -41,7 +41,7 @@ def postProcessing(im_softmax_org, image_shape):
     t_f_vehicle_array[496:] = 0
     
     im_softmax = im_softmax_org[0][:, 1].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax > 0.9).reshape(image_shape[0], image_shape[1], 1)
+    segmentation = (im_softmax >= 1.0).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
     street_im = scipy.misc.imresize(mask, (600,800))
