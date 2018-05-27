@@ -45,13 +45,24 @@ with tf.Session() as sess:
     input_image = graph.get_tensor_by_name('image_input:0')
     keep_prob = graph.get_tensor_by_name('keep_prob:0')
 
-    image_org=scipy.misc.imread("255.png")
-    image = scipy.misc.imresize(image_org, image_shape)
+    image_org1=scipy.misc.imread("255.png")
+    #image_org = image_org1
+    image1 = scipy.misc.imresize(image_org1, image_shape)
+
+    image_org2=scipy.misc.imread("528.png")
+    image_org = image_org2
+    image2 = scipy.misc.imresize(image_org2, image_shape)
+    
     im_softmax_org = sess.run(
         [tf.nn.softmax(logits)],
-        {keep_prob: 0.001, input_image: [image]})
+        {keep_prob: 0.001, input_image: [image1,image2]})
+    print(np.array(im_softmax_org).shape)
 
-    im_softmax = im_softmax_org[0][:, 0].reshape(image_shape[0], image_shape[1])
+    
+    im_softmax_org = np.array(im_softmax_org).reshape(2, 110592, 3)
+    print(im_softmax_org.shape)
+
+    im_softmax = im_softmax_org[1][:, 0].reshape(image_shape[0], image_shape[1])
     segmentation = (im_softmax > 0.8).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
@@ -63,7 +74,7 @@ with tf.Session() as sess:
     c = verify(t_f_vehicle_array, image_org)
     scipy.misc.imsave("final.png", np.array(c))
 
-    im_softmax = im_softmax_org[0][:, 1].reshape(image_shape[0], image_shape[1])
+    im_softmax = im_softmax_org[1][:, 1].reshape(image_shape[0], image_shape[1])
     segmentation = (im_softmax > 0.8).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
