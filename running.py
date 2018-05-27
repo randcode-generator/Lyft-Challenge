@@ -60,7 +60,7 @@ with tf.Session() as sess:
         image = scipy.misc.imresize(rgb_frame, image_shape)
         images.append(image)
 
-        if(len(images) == 8):
+        if(len(images) == 25):
             im_softmax_org = sess.run(
                 [tf.nn.softmax(logits)],
                 {keep_prob: 0.001, input_image: images})
