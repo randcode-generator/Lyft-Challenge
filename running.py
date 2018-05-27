@@ -39,6 +39,7 @@ def verify(true_false, rgb_image):
     street_im.paste(mask, box=None, mask=mask)
     return street_im
 
+filename = "255.png"
 with tf.Session() as sess:
     meta_graph.restore(sess, tf.train.latest_checkpoint('./model'))
     graph = sess.graph
@@ -46,11 +47,11 @@ with tf.Session() as sess:
     input_image = graph.get_tensor_by_name('image_input:0')
     keep_prob = graph.get_tensor_by_name('keep_prob:0')
 
-    image_org1=scipy.misc.imread("255.png")
+    image_org1=scipy.misc.imread(filename)
     #image_org = image_org1
     image1 = scipy.misc.imresize(image_org1, image_shape)
 
-    image_org2=scipy.misc.imread("528.png")
+    image_org2=scipy.misc.imread(filename)
     image_org = image_org2
     image2 = scipy.misc.imresize(image_org2, image_shape)
     
@@ -64,11 +65,10 @@ with tf.Session() as sess:
     print(im_softmax_org.shape)
 
     im_softmax = im_softmax_org[1][:, 0].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax > 0.8).reshape(image_shape[0], image_shape[1], 1)
+    segmentation = (im_softmax >= 1).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
     street_im = scipy.misc.imresize(mask, (600,800))
-    scipy.misc.imsave("mask.png", np.array(street_im))
     t_f_vehicle_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
 
     t_f_vehicle_array[496:] = 0
@@ -76,10 +76,12 @@ with tf.Session() as sess:
     scipy.misc.imsave("final.png", np.array(c))
 
     im_softmax = im_softmax_org[1][:, 1].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax > 0.8).reshape(image_shape[0], image_shape[1], 1)
+    segmentation = (im_softmax >= 1).reshape(image_shape[0], image_shape[1], 1)
     mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
     mask = scipy.misc.toimage(mask, mode="RGBA")
     street_im = scipy.misc.imresize(mask, (600,800))
+    print(np.unique(mask))
+    scipy.misc.imsave("mask.png", np.array(street_im))
     t_f_road_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
 
     c = verify(t_f_road_array, image_org)
