@@ -26,7 +26,7 @@ answer_key = {}
 frame = 1
 
 meta_graph = tf.train.import_meta_graph("/tmp/model/vehicles.meta")
-image_shape = (288, 384)
+image_shape = (192, 256)
 
 background_color = np.array([0, 0, 0, 0])
 
@@ -65,7 +65,7 @@ with tf.Session() as sess:
                 [tf.nn.softmax(logits)],
                 {keep_prob: 0.001, input_image: images})
 
-            im_softmax_org = np.array(im_softmax_org).reshape(len(images), 110592, 3)
+            im_softmax_org = np.array(im_softmax_org).reshape(len(images), 49152, 3)
             for x in range(0,len(images)):
                 arrs = postProcessing([im_softmax_org[x]], image_shape)
                 answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
@@ -77,7 +77,7 @@ with tf.Session() as sess:
         im_softmax_org = sess.run(
             [tf.nn.softmax(logits)],
             {keep_prob: 0.001, input_image: images})
-        im_softmax_org = np.array(im_softmax_org).reshape(len(images), 110592, 3)
+        im_softmax_org = np.array(im_softmax_org).reshape(len(images), 49152, 3)
         for x in range(0,len(images)):
             arrs = postProcessing([im_softmax_org[x]], image_shape)
             answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
