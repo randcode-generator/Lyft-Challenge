@@ -60,12 +60,12 @@ with tf.Session() as sess:
         image = scipy.misc.imresize(rgb_frame, image_shape)
         images.append(image)
 
-        if(len(images) == 4):
+        if(len(images) == 8):
             im_softmax_org = sess.run(
                 [tf.nn.softmax(logits)],
                 {keep_prob: 0.001, input_image: images})
 
-            im_softmax_org = np.array(im_softmax_org).reshape(4, 110592, 3)
+            im_softmax_org = np.array(im_softmax_org).reshape(len(images), 110592, 3)
             for x in range(0,len(images)):
                 arrs = postProcessing([im_softmax_org[x]], image_shape)
                 answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
