@@ -58,10 +58,11 @@ def maybe_download_pretrained_vgg(data_dir):
         os.remove(os.path.join(vgg_path, vgg_filename))
 
 
-def filterImage(filter, seg_image):
+def filterImage(filter, seg_image, isCar=False):
     background_color = np.array(filter)
     gt_bg = np.all(seg_image == background_color, axis=2)
-    gt_bg[495:] = False
+    if(isCar == True):
+        gt_bg[495:] = False
     gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
     mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
     return mask
@@ -105,7 +106,7 @@ def gen_batch_function(data_folder, image_shape):
                 street_im = scipy.misc.imresize(street_im, image_shape)
                 seg_bg1=seg_bg_road = filterImage_true_false(street_im)
 
-                street_im = filterImage([10, 0, 0], seg_image)
+                street_im = filterImage([10, 0, 0], seg_image, True)
                 street_im = scipy.misc.imresize(street_im, image_shape)
                 seg_bg2=seg_bg_vehicle = filterImage_true_false(street_im)
 
