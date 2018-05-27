@@ -151,7 +151,7 @@ def run():
         
         # TODO: Train NN using the train_nn function
         epochs = 10
-        batch_size = 16
+        batch_size = 32
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
         print("train_nn")
 
