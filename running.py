@@ -30,6 +30,25 @@ image_shape = (288, 384)
 
 background_color = np.array([0, 0, 0, 0])
 
+def postProcessing(im_softmax_org, image_shape):
+    im_softmax = im_softmax_org[0][:, 0].reshape(image_shape[0], image_shape[1])
+    segmentation = (im_softmax > 0.95).reshape(image_shape[0], image_shape[1], 1)
+    mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
+    mask = scipy.misc.toimage(mask, mode="RGBA")
+    street_im = scipy.misc.imresize(mask, (600,800))
+    t_f_vehicle_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
+    t_f_vehicle_array[496:] = 0
+
+    im_softmax = im_softmax_org[0][:, 1].reshape(image_shape[0], image_shape[1])
+    segmentation = (im_softmax > 0.9).reshape(image_shape[0], image_shape[1], 1)
+    mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
+    mask = scipy.misc.toimage(mask, mode="RGBA")
+    street_im = scipy.misc.imresize(mask, (600,800))
+    t_f_road_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
+
+    return (t_f_vehicle_array, t_f_road_array)
+
+images = []
 with tf.Session() as sess:
     meta_graph.restore(sess, tf.train.latest_checkpoint('/tmp/model'))
     graph = sess.graph
@@ -39,26 +58,28 @@ with tf.Session() as sess:
 
     for rgb_frame in video:
         image = scipy.misc.imresize(rgb_frame, image_shape)
-        im_softmax_org = sess.run(
-            [tf.nn.softmax(logits)],
-            {keep_prob: 0.001, input_image: [image]})
+        images.append(image)
+
+        if(len(images) == 4):
+            im_softmax_org = sess.run(
+                [tf.nn.softmax(logits)],
+                {keep_prob: 0.001, input_image: images})
     
-        im_softmax = im_softmax_org[0][:, 0].reshape(image_shape[0], image_shape[1])
-        segmentation = (im_softmax > 0.95).reshape(image_shape[0], image_shape[1], 1)
-        mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
-        mask = scipy.misc.toimage(mask, mode="RGBA")
-        street_im = scipy.misc.imresize(mask, (600,800))
-        t_f_vehicle_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
-        t_f_vehicle_array[496:] = 0
+            im_softmax_org = np.array(im_softmax_org).reshape(4, 110592, 3)
+            for x in range(0,len(images)):
+                arrs = postProcessing([im_softmax_org[x]], image_shape)
+                answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
+                frame+=1
 
-        im_softmax = im_softmax_org[0][:, 1].reshape(image_shape[0], image_shape[1])
-        segmentation = (im_softmax > 0.9).reshape(image_shape[0], image_shape[1], 1)
-        mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
-        mask = scipy.misc.toimage(mask, mode="RGBA")
-        street_im = scipy.misc.imresize(mask, (600,800))
-        t_f_road_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
-
-        answer_key[frame] = [encode(t_f_vehicle_array), encode(t_f_road_array)]
+            images.clear()
+    
+    im_softmax_org = sess.run(
+        [tf.nn.softmax(logits)],
+        {keep_prob: 0.001, input_image: images})
+    im_softmax_org = np.array(im_softmax_org).reshape(len(images), 110592, 3)
+    for x in range(0,len(images)):
+        arrs = postProcessing([im_softmax_org[x]], image_shape)
+        answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
         frame+=1
 
 print (json.dumps(answer_key))
