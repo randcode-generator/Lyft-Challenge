@@ -73,6 +73,16 @@ def filterImage_true_false(seg_image):
     gt_bg=gt_bg.reshape(*gt_bg.shape, 1)
     return np.invert(gt_bg)
 
+def verify(true_false, rgb_image):
+    print(np.unique(true_false))
+    #mask = true_false.reshape(*true_false.shape, 1)
+    #print(mask.shape)
+    mask = np.dot(true_false, np.array([[0, 255, 0, 127]]))
+    mask = scipy.misc.toimage(mask, mode="RGBA")
+    street_im = scipy.misc.toimage(rgb_image)
+    street_im.paste(mask, box=None, mask=mask)
+    return street_im
+
 def gen_batch_function(data_folder, image_shape):
     """
     Generate function to create batches of training data
@@ -105,8 +115,8 @@ def gen_batch_function(data_folder, image_shape):
                 street_im = filterImage([7, 0, 0], seg_image)
                 street_im = scipy.misc.imresize(street_im, image_shape)
                 seg_bg1=seg_bg_road = filterImage_true_false(street_im)
-
-                street_im = filterImage([10, 0, 0], seg_image)
+                
+                street_im = filterImage([10, 0, 0], seg_image, True)
                 street_im = scipy.misc.imresize(street_im, image_shape)
                 seg_bg2=seg_bg_vehicle = filterImage_true_false(street_im)
 
