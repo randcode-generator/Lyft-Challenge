@@ -24,20 +24,48 @@ answer_key = {}
 frame = 1
 
 meta_graph = tf.train.import_meta_graph("./model/vehicles.meta")
-image_shape = (96, 128)
+image_shape = (64, 160)
 total_size = image_shape[0]*image_shape[1]
 
 background_color = np.array([0, 0, 0, 0])
 
-def verify(true_false, rgb_image):
-    print(np.unique(true_false))
-    mask = true_false.reshape(*true_false.shape, 1)
-    print(mask.shape)
-    mask = np.dot(mask, np.array([[0, 255, 0, 127]]))
-    mask = scipy.misc.toimage(mask, mode="RGBA")
-    street_im = scipy.misc.toimage(rgb_image)
-    street_im.paste(mask, box=None, mask=mask)
-    return street_im
+def verify(arr_rgb, arr_seg):
+    c = 0
+    a = []
+    for _ in range(0, 5):
+        b = []
+        for _ in range(0, 4):
+            gt_bg = np.array(arr_seg[c])
+            gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
+            mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
+            mask = scipy.misc.toimage(mask, mode="RGBA")
+            image = scipy.misc.toimage(arr_rgb[c])
+            image.paste(mask, box=None, mask=mask)
+            b.append(np.array(image))
+            c += 1
+        a.append(b)
+    return a
+
+def windowImage(image, startx, starty, width, height, 
+            isFilter=False, filter = [7, 0, 0], isCar = False):
+    if(isFilter):
+        background_color = np.array(filter)
+        gt_bg = np.all(image == background_color, axis=2).astype('uint8')
+        if(isCar):
+            gt_bg[495:] = False
+            print("called")
+        image = gt_bg
+
+    a=[]
+    for i in range(0, 5):
+        for j in range(0, 4):
+            left = startx + (width * i)
+            top = starty + (height * j)
+            right = left + width
+            bottom = top + height
+            arr_img = image[top:bottom, left:right]
+            a.append(arr_img)
+    return a
 
 filename = "255.png"
 with tf.Session() as sess:
@@ -47,59 +75,36 @@ with tf.Session() as sess:
     input_image = graph.get_tensor_by_name('image_input:0')
     keep_prob = graph.get_tensor_by_name('keep_prob:0')
 
-    image_org1=scipy.misc.imread(filename)
-    #image_org = image_org1
-    image1 = scipy.misc.imresize(image_org1, image_shape)
-
-    image_org2=scipy.misc.imread(filename)
-    image_org = image_org2
-    image2 = scipy.misc.imresize(image_org2, image_shape)
-    
+    rgb_image=scipy.misc.imread(filename)
+    startx = 0
+    starty = 264
+    width = image_shape[1]
+    height = image_shape[0]
+    arr_rgb = windowImage(rgb_image, startx, starty, width, height)
+ 
     im_softmax_org = sess.run(
         [tf.nn.softmax(logits)],
-        {keep_prob: 0.001, input_image: [image1,image2]})
-    print(np.array(im_softmax_org).shape)
+        {keep_prob: 0.001, input_image: arr_rgb})
 
-    
-    im_softmax_org = np.array(im_softmax_org).reshape(2, total_size, 3)
-    print(im_softmax_org.shape)
+    arr_seg = np.array(im_softmax_org).reshape(20, 64, 160, 3)
 
-    im_softmax = im_softmax_org[1][:, 0].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax >= 1).reshape(image_shape[0], image_shape[1], 1)
-    mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
-    mask = scipy.misc.toimage(mask, mode="RGBA")
-    street_im = scipy.misc.imresize(mask, (600,800))
-    t_f_vehicle_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
+    goin = arr_seg[:,:,:,0]
+    a1 = verify(arr_rgb, goin)
+    h=[]
+    for i in a1:
+        h.append(np.vstack(i))
+    scipy.misc.imsave("output_car.png", np.hstack(h))
 
-    t_f_vehicle_array[496:] = 0
-    c = verify(t_f_vehicle_array, image_org)
-    scipy.misc.imsave("final.png", np.array(c))
+    goin = arr_seg[:,:,:,1]
+    a1 = verify(arr_rgb, goin)
+    h=[]
+    for i in a1:
+        h.append(np.vstack(i))
+    scipy.misc.imsave("output_road.png", np.hstack(h))
 
-    im_softmax = im_softmax_org[1][:, 1].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax >= 1).reshape(image_shape[0], image_shape[1], 1)
-    mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
-    mask = scipy.misc.toimage(mask, mode="RGBA")
-    street_im = scipy.misc.imresize(mask, (600,800))
-    print(np.unique(mask))
-    scipy.misc.imsave("mask.png", np.array(street_im))
-    t_f_road_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
-
-    c = verify(t_f_road_array, image_org)
-    scipy.misc.imsave("final_2.png", np.array(c))
-# for rgb_frame in video:
-	
-#     # Grab red channel	
-# 	red = rgb_frame[:,:,0]    
-#     # Look for red cars :)
-# 	binary_car_result = np.where(red>250,1,0).astype('uint8')
-    
-#     # Look for road :)
-# 	binary_road_result = binary_car_result = np.where(red<20,1,0).astype('uint8')
-
-# 	answer_key[frame] = [encode(binary_car_result), encode(binary_road_result)]
-    
-#     # Increment frame
-# 	frame+=1
-
-# Print output in proper json format
-#print (json.dumps(answer_key))
+    goin = arr_seg[:,:,:,2]
+    a1 = verify(arr_rgb, goin)
+    h=[]
+    for i in a1:
+        h.append(np.vstack(i))
+    scipy.misc.imsave("output_inverted.png", np.hstack(h))
