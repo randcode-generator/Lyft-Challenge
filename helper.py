@@ -58,20 +58,25 @@ def maybe_download_pretrained_vgg(data_dir):
         os.remove(os.path.join(vgg_path, vgg_filename))
 
 
-def filterImage(filter, seg_image, isCar=False):
-    background_color = np.array(filter)
-    gt_bg = np.all(seg_image == background_color, axis=2)
-    if(isCar == True):
-        gt_bg[495:] = False
-    gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
-    mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
-    return mask
+def windowImage(image, startx, starty, width, height, 
+            isFilter=False, filter = [7, 0, 0], isCar = False):
+    if(isFilter):
+        background_color = np.array(filter)
+        gt_bg = np.all(image == background_color, axis=2).astype('uint8')
+        if(isCar):
+            gt_bg[495:] = False
+        image = gt_bg
 
-def filterImage_true_false(seg_image):
-    background_color = np.array([0, 0, 0, 0])
-    gt_bg = np.all(seg_image == background_color, axis=2)
-    gt_bg=gt_bg.reshape(*gt_bg.shape, 1)
-    return np.invert(gt_bg)
+    a=[]
+    for i in range(0, 5):
+        for j in range(0, 4):
+            left = startx + (width * i)
+            top = starty + (height * j)
+            right = left + width
+            bottom = top + height
+            arr_img = image[top:bottom, left:right]
+            a.append(arr_img)
+    return a
 
 def gen_batch_function(data_folder, image_shape):
     """
@@ -88,34 +93,37 @@ def gen_batch_function(data_folder, image_shape):
         """
         rgb_paths = glob(os.path.join(data_folder, 'CameraRGB', '*.png'))
         random.shuffle(rgb_paths)
+        rgb_images = []
+        seg_images = []
         for batch_i in range(0, len(rgb_paths), batch_size):
-            rgb_images = []
-            seg_images = []
+            startx = 0
+            starty = 264
+            width = image_shape[1]
+            height = image_shape[0]
             for rgb_image_file in rgb_paths[batch_i:batch_i+batch_size]:
-
                 filename_w_ext = os.path.basename(rgb_image_file)
                 filename, _ = os.path.splitext(filename_w_ext)
                 seg_image_file = os.path.join(data_folder, 'CameraSeg', filename+".png")
 
                 rgb_image = scipy.misc.imread(rgb_image_file)
-                rgb_image = scipy.misc.imresize(rgb_image, image_shape)
-
                 seg_image = scipy.misc.imread(seg_image_file)
 
-                street_im = filterImage([7, 0, 0], seg_image)
-                street_im = scipy.misc.imresize(street_im, image_shape)
-                seg_bg1=seg_bg_road = filterImage_true_false(street_im)
+                arr_rgb = windowImage(rgb_image, startx, starty, width, height)
+                arr_seg_car = windowImage(seg_image, startx, starty, width, height, 
+                    isFilter = True, filter = [10, 0, 0], isCar = True)
 
-                street_im = filterImage([10, 0, 0], seg_image, True)
-                street_im = scipy.misc.imresize(street_im, image_shape)
-                seg_bg2=seg_bg_vehicle = filterImage_true_false(street_im)
-
-                allAND = np.logical_or(seg_bg1, seg_bg2)
+                arr_seg_road = windowImage(seg_image, startx, starty, width, height, 
+                    isFilter = True, filter = [7, 0, 0], isCar = False)
                 
-                seg_image = np.concatenate((seg_bg_vehicle, seg_bg_road, np.invert(allAND)), axis=2)
+                orPixels = np.logical_or(arr_seg_car, arr_seg_road)
 
-                rgb_images.append(rgb_image)
-                seg_images.append(seg_image)
+                h1 = np.array(arr_seg_car).flatten()
+                h2 = np.array(arr_seg_road).flatten()
+                h3 = np.array(np.invert(orPixels)).flatten()
+                arr_seg = np.vstack((h1, h2, h3)).T
+                arr_seg = arr_seg.reshape((20, 64, 160, 3))
 
-            yield np.array(rgb_images), np.array(seg_images)
+                rgb_images.append(arr_rgb)
+                seg_images.append(arr_seg)
+        yield np.array(arr_rgb), np.array(arr_seg)
     return get_batches_fn
