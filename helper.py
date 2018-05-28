@@ -58,19 +58,19 @@ def maybe_download_pretrained_vgg(data_dir):
         os.remove(os.path.join(vgg_path, vgg_filename))
 
 def verify(arr_rgb, arr_seg):
+    c = 0
     a = []
-    counter = 0
-    for i in range(0, len(arr_rgb)):
+    for _ in range(0, 5):
         b = []
-        for j in range(0, len(arr_rgb[i])):
-            gt_bg = np.array(arr_seg[i][j])
+        for _ in range(0, 4):
+            gt_bg = np.array(arr_seg[c])
             gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
             mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
             mask = scipy.misc.toimage(mask, mode="RGBA")
-            image = scipy.misc.toimage(arr_rgb[i][j])
+            image = scipy.misc.toimage(arr_rgb[c])
             image.paste(mask, box=None, mask=mask)
             b.append(np.array(image))
-            counter += 1
+            c += 1
         a.append(b)
     return a
 
@@ -86,15 +86,13 @@ def windowImage(image, startx, starty, width, height,
 
     a=[]
     for i in range(0, 5):
-        b=[]
         for j in range(0, 4):
             left = startx + (width * i)
             top = starty + (height * j)
             right = left + width
             bottom = top + height
             arr_img = image[top:bottom, left:right]
-            b.append(arr_img)
-        a.append(b)
+            a.append(arr_img)
     return a
 
 def gen_batch_function(data_folder, image_shape):
@@ -129,5 +127,20 @@ def gen_batch_function(data_folder, image_shape):
                 arr_seg = windowImage(seg_image, startx, starty, width, height, 
                     isFilter = True, filter = [7, 0, 0], isCar = False)
 
+                a = verify(arr_rgb, arr_seg)
+                h=[]
+                for i in a:
+                    h.append(np.vstack(i))
+                scipy.misc.imsave("out_r_all.png", np.hstack(h))
+
+                arr_rgb = windowImage(rgb_image, startx, starty, width, height)
+                arr_seg = windowImage(seg_image, startx, starty, width, height, 
+                    isFilter = True, filter = [10, 0, 0], isCar = True)
+                a = verify(arr_rgb, arr_seg)
+                h=[]
+                for i in a:
+                    h.append(np.vstack(i))
+                scipy.misc.imsave("out_v_all.png", np.hstack(h))
+            
             yield np.array(arr_rgb), np.array(arr_seg)
     return get_batches_fn
