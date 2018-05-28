@@ -121,43 +121,39 @@ def run():
     data_dir = '/tmp/data'
     runs_dir = './runs'
 
-    get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'Train'), image_shape)
-
-    for _, _ in get_batches_fn(155):
-        print("hello")
     # # Download pretrained vgg model
-    # helper.maybe_download_pretrained_vgg(data_dir)
+    helper.maybe_download_pretrained_vgg(data_dir)
 
-    # # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
-    # # You'll need a GPU with at least 10 teraFLOPS to train on.
-    # #  https://www.cityscapes-dataset.com/
+    # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
+    # You'll need a GPU with at least 10 teraFLOPS to train on.
+    #  https://www.cityscapes-dataset.com/
 
-    # with tf.Session() as sess:
-    #     # Path to vgg model
-    #     vgg_path = os.path.join(data_dir, 'vgg')
-    #     # Create function to get batches
-    #     get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'Train'), image_shape)
+    with tf.Session() as sess:
+        # Path to vgg model
+        vgg_path = os.path.join(data_dir, 'vgg')
+        # Create function to get batches
+        get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'Train'), image_shape)
 
-    #     # TODO: Build NN using load_vgg, layers, and optimize function
-    #     input_image, keep_prob, layer3, layer4, layer7 = load_vgg(sess, vgg_path)
-    #     print("vgg loaded")
-    #     last_layer = layers(layer3, layer4, layer7, num_classes)
-    #     print("last layer")
+        # TODO: Build NN using load_vgg, layers, and optimize function
+        input_image, keep_prob, layer3, layer4, layer7 = load_vgg(sess, vgg_path)
+        print("vgg loaded")
+        last_layer = layers(layer3, layer4, layer7, num_classes)
+        print("last layer")
 
-    #     correct_label = tf.placeholder(tf.float32, [None, None, None, num_classes])
-    #     learning_rate = tf.placeholder(tf.float32)
-    #     logits, train_op, cross_entropy_loss = optimize(last_layer,correct_label, learning_rate, num_classes )
-    #     print("optimize")
+        correct_label = tf.placeholder(tf.float32, [None, None, None, num_classes])
+        learning_rate = tf.placeholder(tf.float32)
+        logits, train_op, cross_entropy_loss = optimize(last_layer,correct_label, learning_rate, num_classes )
+        print("optimize")
         
-    #     # TODO: Train NN using the train_nn function
-    #     epochs = 1
-    #     batch_size = 16
-    #     train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
-    #     print("train_nn")
+        # TODO: Train NN using the train_nn function
+        epochs = 1
+        batch_size = 16
+        train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
+        print("train_nn")
 
-    #     saver = tf.train.Saver()
-    #     saver.save(sess, './vehicles')
-    #     print("model saved")
+        saver = tf.train.Saver()
+        saver.save(sess, './vehicles')
+        print("model saved")
 
 if __name__ == '__main__':
     run()
