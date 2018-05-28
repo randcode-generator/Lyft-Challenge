@@ -57,32 +57,6 @@ def maybe_download_pretrained_vgg(data_dir):
         # Remove zip file to save space
         os.remove(os.path.join(vgg_path, vgg_filename))
 
-
-def filterImage(filter, seg_image, isCar=False):
-    background_color = np.array(filter)
-    gt_bg = np.all(seg_image == background_color, axis=2)
-    if(isCar == True):
-        gt_bg[495:] = False
-    #gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
-    #mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
-    return gt_bg
-
-def filterImage_true_false(seg_image):
-    background_color = np.array([0, 0, 0, 0])
-    gt_bg = np.all(seg_image == background_color, axis=2)
-    gt_bg=gt_bg.reshape(*gt_bg.shape, 1)
-    return np.invert(gt_bg)
-
-def verify_old(true_false, rgb_image):
-    print(np.unique(true_false))
-    #mask = true_false.reshape(*true_false.shape, 1)
-    #print(mask.shape)
-    mask = np.dot(true_false, np.array([[0, 255, 0, 127]]))
-    mask = scipy.misc.toimage(mask, mode="RGBA")
-    street_im = scipy.misc.toimage(rgb_image)
-    street_im.paste(mask, box=None, mask=mask)
-    return street_im
-
 def verify(arr_rgb, arr_seg):
     a = []
     counter = 0
@@ -96,7 +70,6 @@ def verify(arr_rgb, arr_seg):
             image = scipy.misc.toimage(arr_rgb[i][j])
             image.paste(mask, box=None, mask=mask)
             b.append(np.array(image))
-            #scipy.misc.imsave("out" + str(counter) + ".png", image)
             counter += 1
         a.append(b)
     return a
@@ -121,9 +94,7 @@ def windowImage(image, startx, starty, width, height,
             bottom = top + height
             arr_img = image[top:bottom, left:right]
             b.append(arr_img)
-            #scipy.misc.imsave("croped_" + str(j) + ".png", img)
         a.append(b)
-    print("done")
     return a
 
 def gen_batch_function(data_folder, image_shape):
@@ -159,20 +130,6 @@ def gen_batch_function(data_folder, image_shape):
                 arr_rgb = windowImage(rgb_image, startx, starty, width, height)
                 arr_seg = windowImage(seg_image, startx, starty, width, height, 
                     isFilter = True, filter = [7, 0, 0], isCar = False)
-                a = verify(arr_rgb, arr_seg)
-                h=[]
-                for i in a:
-                    h.append(np.vstack(i))
-                scipy.misc.imsave("out_r_all.png", np.hstack(h))
 
-                arr_rgb = windowImage(rgb_image, startx, starty, width, height)
-                arr_seg = windowImage(seg_image, startx, starty, width, height, 
-                    isFilter = True, filter = [10, 0, 0], isCar = True)
-                a = verify(arr_rgb, arr_seg)
-                h=[]
-                for i in a:
-                    h.append(np.vstack(i))
-                scipy.misc.imsave("out_v_all.png", np.hstack(h))
-
-            yield np.array(rgb_images), np.array(seg_images)
+            yield np.array(arr_rgb), np.array(arr_seg)
     return get_batches_fn
