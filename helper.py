@@ -57,22 +57,6 @@ def maybe_download_pretrained_vgg(data_dir):
         # Remove zip file to save space
         os.remove(os.path.join(vgg_path, vgg_filename))
 
-def verify(arr_rgb, arr_seg):
-    c = 0
-    a = []
-    for _ in range(0, 5):
-        b = []
-        for _ in range(0, 4):
-            gt_bg = np.array(arr_seg[c])
-            gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
-            mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
-            mask = scipy.misc.toimage(mask, mode="RGBA")
-            image = scipy.misc.toimage(arr_rgb[c])
-            image.paste(mask, box=None, mask=mask)
-            b.append(np.array(image))
-            c += 1
-        a.append(b)
-    return a
 
 def windowImage(image, startx, starty, width, height, 
             isFilter=False, filter = [7, 0, 0], isCar = False):
@@ -81,7 +65,6 @@ def windowImage(image, startx, starty, width, height,
         gt_bg = np.all(image == background_color, axis=2).astype('uint8')
         if(isCar):
             gt_bg[495:] = False
-            print("called")
         image = gt_bg
 
     a=[]
@@ -110,6 +93,8 @@ def gen_batch_function(data_folder, image_shape):
         """
         rgb_paths = glob(os.path.join(data_folder, 'CameraRGB', '*.png'))
         random.shuffle(rgb_paths)
+        rgb_images = []
+        seg_images = []
         for batch_i in range(0, len(rgb_paths), batch_size):
             startx = 0
             starty = 264
@@ -138,27 +123,7 @@ def gen_batch_function(data_folder, image_shape):
                 arr_seg = np.vstack((h1, h2, h3)).T
                 arr_seg = arr_seg.reshape((20, 64, 160, 3))
 
-                goin = arr_seg[:,:,:,0]
-                a1 = verify(arr_rgb, goin)
-                h=[]
-                for i in a1:
-                    h.append(np.vstack(i))
-                scipy.misc.imsave("output_car.png", np.hstack(h))
-
-                goin = arr_seg[:,:,:,1]
-                a1 = verify(arr_rgb, goin)
-                h=[]
-                for i in a1:
-                    h.append(np.vstack(i))
-                scipy.misc.imsave("output_road.png", np.hstack(h))
-
-                goin = arr_seg[:,:,:,2]
-                a1 = verify(arr_rgb, goin)
-                h=[]
-                for i in a1:
-                    h.append(np.vstack(i))
-                scipy.misc.imsave("output_inverted.png", np.hstack(h))
-
-
-            yield np.array(arr_rgb), np.array(arr_seg)
+                rgb_images.append(arr_rgb)
+                seg_images.append(arr_seg)
+        yield np.array(arr_rgb), np.array(arr_seg)
     return get_batches_fn
