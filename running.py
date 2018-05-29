@@ -72,7 +72,7 @@ def windowImage(image, startx, starty, width, height,
             a.append(arr_img)
     return a
 
-def postProcessing(im_softmax_org, image_shape):
+def postProcessing(arr_rgb, im_softmax_org, image_shape):
     im_soft_max_car = np.array(im_softmax_org[:, :, :, 0])
     im_soft_max_car = (im_soft_max_car > 0.5).astype('uint8')
     pCar = padding(im_soft_max_car)
@@ -107,7 +107,7 @@ with tf.Session() as sess:
 
             im_softmax_org = np.array(im_softmax_org).reshape(len(images), 20, 64, 160, 3)
             for x in range(0,len(images)):
-                arrs = postProcessing([im_softmax_org[x]], image_shape)
+                arrs = postProcessing(images[x], im_softmax_org[x], image_shape)
                 answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
                 frame+=1
 
@@ -119,7 +119,7 @@ with tf.Session() as sess:
             {keep_prob: 0.001, input_image: images})
         im_softmax_org = np.array(im_softmax_org).reshape(len(images), 20, 64, 160, 3)
         for x in range(0,len(images)):
-            arrs = postProcessing([im_softmax_org[x]], image_shape)
+            arrs = postProcessing(images[x], im_softmax_org[x], image_shape)
             answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
             frame+=1
 
