@@ -47,6 +47,27 @@ def verify(arr_rgb, arr_seg):
         a.append(b)
     return a
 
+def padding(arr_seg):
+    c = 0
+    a = []
+    for _ in range(0, 5):
+        b = []
+        for _ in range(0, 4):
+            gt_bg = np.array(arr_seg[c])
+            b.append(gt_bg)
+            c += 1
+        a.append(b)
+    h=[]
+    for i in a:
+        h.append(np.vstack(i))
+    f = np.hstack(h)
+    print(np.array(f).shape)
+    g1 = np.zeros((264, 800)).astype('uint8')
+    g2 = f.astype('uint8')
+    g3 = np.zeros((80, 800)).astype('uint8')
+    d = np.vstack((g1, g2, g3)).astype('uint8')
+    return d
+
 def windowImage(image, startx, starty, width, height, 
             isFilter=False, filter = [7, 0, 0], isCar = False):
     if(isFilter):
@@ -67,7 +88,23 @@ def windowImage(image, startx, starty, width, height,
             a.append(arr_img)
     return a
 
-filename = "0.png"
+def postProcessing(arr_rgb, im_softmax_org, image_shape):
+    print(np.array(im_softmax_org).shape)
+    print(np.array(im_softmax_org[:, :, :, 0]).shape)
+    im_soft_max_car = np.array(im_softmax_org[:, :, :, 0])
+    im_soft_max_car = (im_soft_max_car > 0.3).astype('uint8')
+    pCar = padding(im_soft_max_car)
+
+    im_soft_max_road = np.array(im_softmax_org[:, :, :, 1])
+    im_soft_max_road = (im_soft_max_road > 0.5).astype('uint8')
+    pRoad = padding(im_soft_max_road)
+
+    print(np.unique(np.array(pRoad)))
+    print(np.unique(np.array(pCar)))
+    return (pCar, pRoad)
+
+video = ["0.png", "1.png"]
+images = []
 with tf.Session() as sess:
     meta_graph.restore(sess, tf.train.latest_checkpoint('./model'))
     graph = sess.graph
@@ -75,61 +112,25 @@ with tf.Session() as sess:
     input_image = graph.get_tensor_by_name('image_input:0')
     keep_prob = graph.get_tensor_by_name('keep_prob:0')
 
-    rgb_image=scipy.misc.imread(filename)
-    startx = 0
-    starty = 264
-    width = image_shape[1]
-    height = image_shape[0]
-    arr_rgb = windowImage(rgb_image, startx, starty, width, height)
+    for filename in video:
+        rgb_frame=scipy.misc.imread(filename)
+        startx = 0
+        starty = 264
+        width = image_shape[1]
+        height = image_shape[0]
+        arr_rgb = windowImage(rgb_frame, startx, starty, width, height)
+        arr_rgb = np.array(arr_rgb).reshape((20*64, 160, 3))
+        images.append(arr_rgb)
 
-    print(np.array(arr_rgb).shape)
-    arr_rgb1 = np.array(arr_rgb).reshape((20*64, 160, 3))
+        if(len(images) == 2):
+            im_softmax_org = sess.run(
+                [tf.nn.softmax(logits)],
+                {keep_prob: 0.001, input_image: images})
+            print(np.array(im_softmax_org).shape)
+            im_softmax_org = np.array(im_softmax_org).reshape(len(images), 20, 64, 160, 3)
+            for x in range(0,len(images)):
+                arrs = postProcessing(images[x], im_softmax_org[x], image_shape)
+                answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
+                frame+=1
 
-    im_softmax_org = sess.run(
-        [tf.nn.softmax(logits)],
-        {keep_prob: 0.001, input_image: [arr_rgb1]})
-
-    print(np.array(im_softmax_org).shape)
-
-    im_soft_max1 = np.array(im_softmax_org[0][:, 0]).reshape(20, 64, 160)
-
-    v = verify(arr_rgb, (im_soft_max1 > 0.3).astype('uint8'))
-    h=[]
-    for i in v:
-        h.append(np.vstack(i))
-    scipy.misc.imsave("output_car.png", np.hstack(h))
-
-    im_soft_max1 = np.array(im_softmax_org[0][:, 1]).reshape(20, 64, 160)
-
-    v = verify(arr_rgb, (im_soft_max1 > 0.3).astype('uint8'))
-    h=[]
-    for i in v:
-        h.append(np.vstack(i))
-    scipy.misc.imsave("output_road.png", np.hstack(h))
-
-    # segmentation = (arr_seg > .5).astype('uint8')
-    # print(np.unique(np.array(segmentation)))
-
-    # goin = arr_seg[:,:,:,0]
-    # goin = (goin > .5).astype('uint8')
-    # a1 = verify(arr_rgb, goin)
-    # h=[]
-    # for i in a1:
-    #     h.append(np.vstack(i))
-    # scipy.misc.imsave("output_car.png", np.hstack(h))
-
-    # goin = arr_seg[:,:,:,1]
-    # goin = (goin > .9).astype('uint8')
-    # a1 = verify(arr_rgb, goin)
-    # h=[]
-    # for i in a1:
-    #     h.append(np.vstack(i))
-    # scipy.misc.imsave("output_road.png", np.hstack(h))
-
-    # goin = arr_seg[:,:,:,2]
-    # goin = (goin > .5).astype('uint8')
-    # a1 = verify(arr_rgb, goin)
-    # h=[]
-    # for i in a1:
-    #     h.append(np.vstack(i))
-    # scipy.misc.imsave("output_inverted.png", np.hstack(h))
+            images.clear()
