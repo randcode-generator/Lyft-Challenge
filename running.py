@@ -6,9 +6,9 @@ import tensorflow as tf
 import scipy.misc
 
 #parameters
-image_shape = (32, 32)
-width_blocks = 25
-height_blocks = 8
+image_shape = (128, 160)
+width_blocks = 5
+height_blocks = 2
 total_blocks = width_blocks * height_blocks
 epoch = 15
 car_prob_thres = 0.5
