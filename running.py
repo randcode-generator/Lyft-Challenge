@@ -5,6 +5,15 @@ from io import BytesIO, StringIO
 import tensorflow as tf
 import scipy.misc
 
+#parameters
+image_shape = (64, 160)
+width_blocks = 5
+height_blocks = 4
+total_blocks = width_blocks * height_blocks
+epoch = 15
+car_prob_thres = 0.05
+road_prob_thres = 0.5
+
 file = sys.argv[-1]
 
 if file == 'running.py':
@@ -26,17 +35,15 @@ answer_key = {}
 frame = 1
 
 meta_graph = tf.train.import_meta_graph("/tmp/model/vehicles.meta")
-image_shape = (64, 160)
-total_size = image_shape[0]*image_shape[1]
 
 background_color = np.array([0, 0, 0, 0])
 
 def padding(arr_seg):
     c = 0
     a = []
-    for _ in range(0, 5):
+    for _ in range(0, width_blocks):
         b = []
-        for _ in range(0, 4):
+        for _ in range(0, height_blocks):
             gt_bg = np.array(arr_seg[c])
             b.append(gt_bg)
             c += 1
@@ -51,18 +58,10 @@ def padding(arr_seg):
     d = np.vstack((g1, g2, g3)).astype('uint8')
     return d
 
-def windowImage(image, startx, starty, width, height, 
-            isFilter=False, filter = [7, 0, 0], isCar = False):
-    if(isFilter):
-        background_color = np.array(filter)
-        gt_bg = np.all(image == background_color, axis=2).astype('uint8')
-        if(isCar):
-            gt_bg[495:] = False
-        image = gt_bg
-
+def windowImage(image, startx, starty, width, height):
     a=[]
-    for i in range(0, 5):
-        for j in range(0, 4):
+    for i in range(0, width_blocks):
+        for j in range(0, height_blocks):
             left = startx + (width * i)
             top = starty + (height * j)
             right = left + width
@@ -73,11 +72,11 @@ def windowImage(image, startx, starty, width, height,
 
 def postProcessing(arr_rgb, im_softmax_org, image_shape):
     im_soft_max_car = np.array(im_softmax_org[:, :, :, 0])
-    im_soft_max_car = (im_soft_max_car > 0.5).astype('uint8')
+    im_soft_max_car = (im_soft_max_car > car_prob_thres).astype('uint8')
     pCar = padding(im_soft_max_car)
 
     im_soft_max_road = np.array(im_softmax_org[:, :, :, 1])
-    im_soft_max_road = (im_soft_max_road > 0.5).astype('uint8')
+    im_soft_max_road = (im_soft_max_road > road_prob_thres).astype('uint8')
     pRoad = padding(im_soft_max_road)
 
     return (pCar, pRoad)
@@ -96,15 +95,15 @@ with tf.Session() as sess:
         width = image_shape[1]
         height = image_shape[0]
         arr_rgb = windowImage(rgb_frame, startx, starty, width, height)
-        arr_rgb = np.array(arr_rgb).reshape((20*64, 160, 3))
+        arr_rgb = np.array(arr_rgb).reshape((total_blocks*image_shape[0], image_shape[1], 3))
         images.append(arr_rgb)
 
-        if(len(images) == 15):
+        if(len(images) == epoch):
             im_softmax_org = sess.run(
                 [tf.nn.softmax(logits)],
                 {keep_prob: 0.001, input_image: images})
 
-            im_softmax_org = np.array(im_softmax_org).reshape(len(images), 20, 64, 160, 3)
+            im_softmax_org = np.array(im_softmax_org).reshape(len(images), total_blocks, image_shape[0], image_shape[1], 3)
             for x in range(0,len(images)):
                 arrs = postProcessing(images[x], im_softmax_org[x], image_shape)
                 answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
@@ -116,7 +115,7 @@ with tf.Session() as sess:
         im_softmax_org = sess.run(
             [tf.nn.softmax(logits)],
             {keep_prob: 0.001, input_image: images})
-        im_softmax_org = np.array(im_softmax_org).reshape(len(images), 20, 64, 160, 3)
+        im_softmax_org = np.array(im_softmax_org).reshape(len(images), total_blocks, image_shape[0], image_shape[1], 3)
         for x in range(0,len(images)):
             arrs = postProcessing(images[x], im_softmax_org[x], image_shape)
             answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
