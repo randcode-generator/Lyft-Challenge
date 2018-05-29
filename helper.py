@@ -12,8 +12,8 @@ from urllib.request import urlretrieve
 from tqdm import tqdm
 
 #parameters
-width_blocks = 5
-height_blocks = 4
+width_blocks = 25
+height_blocks = 8
 total_blocks = width_blocks * height_blocks
 
 class DLProgress(tqdm):

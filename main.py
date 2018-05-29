@@ -9,7 +9,7 @@ import datetime
 epochs = 10
 batch_size = 10
 num_classes = 3
-image_shape = (64, 160)
+image_shape = (32, 32)
 data_dir = '/tmp/data'
 
 # Check TensorFlow Version
