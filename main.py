@@ -3,6 +3,7 @@ import tensorflow as tf
 import helper
 import warnings
 from distutils.version import LooseVersion
+import datetime
 
 # Check TensorFlow Version
 assert LooseVersion(tf.__version__) >= LooseVersion('1.0'), 'Please use TensorFlow version 1.0 or newer.  You are using {}'.format(tf.__version__)
@@ -100,8 +101,10 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     sess.run(tf.global_variables_initializer())
 
     print("global run")
+
     for e in range(epochs):
         total_loss = 0
+        print("s", datetime.datetime.now())
         for image, seg in get_batches_fn(batch_size):
             loss, _ = sess.run([cross_entropy_loss, train_op],
                 feed_dict = {
@@ -111,22 +114,23 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
                     learning_rate: 0.0001
                 })
             total_loss += loss
+        print("e", datetime.datetime.now())
         print("EPOCH {}...".format(e))
         print("Loss = {:.3f}".format(total_loss))
+        
+        if (e > 4): 
+            saver = tf.train.Saver()
+            saver.save(sess, './model'+ str(e) + '_' + str("{:.2f}".format(total_loss)) +'/vehicles')
+            print("model saved")
 
 def run():
     print("starting")
     num_classes = 3
     image_shape = (64, 160)
     data_dir = '/tmp/data'
-    runs_dir = './runs'
 
-    # # Download pretrained vgg model
+    # Download pretrained vgg model
     helper.maybe_download_pretrained_vgg(data_dir)
-
-    # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
-    # You'll need a GPU with at least 10 teraFLOPS to train on.
-    #  https://www.cityscapes-dataset.com/
 
     with tf.Session() as sess:
         # Path to vgg model
@@ -146,14 +150,10 @@ def run():
         print("optimize")
         
         # TODO: Train NN using the train_nn function
-        epochs = 3
-        batch_size = 5
+        epochs = 10
+        batch_size = 10
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
         print("train_nn")
-
-        saver = tf.train.Saver()
-        saver.save(sess, './model/vehicles')
-        print("model saved")
 
 if __name__ == '__main__':
     run()

@@ -122,12 +122,12 @@ def gen_batch_function(data_folder, image_shape):
                 filename, _ = os.path.splitext(filename_w_ext)
                 seg_image_file = os.path.join(data_folder, 'CameraSeg', filename+".png")
 
-                print(rgb_image_file)
                 rgb_image = scipy.misc.imread(rgb_image_file)
                 seg_image = scipy.misc.imread(seg_image_file)
 
                 arr_rgb = windowImage(rgb_image, startx, starty, width, height)
-                arr_rgb = np.array(arr_rgb).reshape((20*64, 160, 3))
+                arr_rgb = np.array(arr_rgb).reshape(20 * 64, 160, 3)
+
                 arr_seg_car = windowImage(seg_image, startx, starty, width, height, 
                     isFilter = True, filter = [10, 0, 0], isCar = True)
 
@@ -140,7 +140,7 @@ def gen_batch_function(data_folder, image_shape):
                 h2 = np.array(arr_seg_road).flatten()
                 h3 = np.array(np.invert(orPixels)).flatten()
                 arr_seg = np.vstack((h1, h2, h3)).T
-                arr_seg = arr_seg.reshape((20*64, 160, 3))
+                arr_seg = arr_seg.reshape((20 * 64, 160, 3))
 
                 rgb_images.append(arr_rgb)
                 seg_images.append(arr_seg)
