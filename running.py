@@ -24,7 +24,7 @@ answer_key = {}
 frame = 1
 
 meta_graph = tf.train.import_meta_graph("./model/vehicles.meta")
-image_shape = (64, 160)
+image_shape = (32, 32)
 total_size = image_shape[0]*image_shape[1]
 
 background_color = np.array([0, 0, 0, 0])
@@ -33,9 +33,9 @@ def verify(arr_rgb, arr_seg):
     print(np.array(arr_rgb).shape, np.array(arr_seg).shape)
     c = 0
     a = []
-    for _ in range(0, 5):
+    for _ in range(0, 25):
         b = []
-        for _ in range(0, 4):
+        for _ in range(0, 8):
             gt_bg = np.array(arr_seg[c])
             gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
             mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
@@ -50,9 +50,9 @@ def verify(arr_rgb, arr_seg):
 def padding(arr_seg):
     c = 0
     a = []
-    for _ in range(0, 5):
+    for _ in range(0, 25):
         b = []
-        for _ in range(0, 4):
+        for _ in range(0, 8):
             gt_bg = np.array(arr_seg[c])
             b.append(gt_bg)
             c += 1
@@ -78,8 +78,8 @@ def windowImage(image, startx, starty, width, height,
         image = gt_bg
 
     a=[]
-    for i in range(0, 5):
-        for j in range(0, 4):
+    for i in range(0, 25):
+        for j in range(0, 8):
             left = startx + (width * i)
             top = starty + (height * j)
             right = left + width
@@ -101,7 +101,7 @@ def postProcessing(arr_rgb, im_softmax_org, image_shape):
 
     return (pCar, pRoad)
 
-video = ["0.png", "1.png"]
+video = ["1.png", "1.png"]
 images = []
 images_org = []
 seg_org = []
@@ -120,7 +120,7 @@ with tf.Session() as sess:
         width = image_shape[1]
         height = image_shape[0]
         arr_rgb = windowImage(rgb_frame, startx, starty, width, height)
-        arr_rgb = np.array(arr_rgb).reshape((20*64, 160, 3))
+        arr_rgb = np.array(arr_rgb).reshape((200*32, 32, 3))
         images.append(arr_rgb)
 
         if(len(images) == 10):
@@ -128,7 +128,7 @@ with tf.Session() as sess:
                 [tf.nn.softmax(logits)],
                 {keep_prob: 0.001, input_image: images})
             print(np.array(im_softmax_org).shape)
-            im_softmax_org = np.array(im_softmax_org).reshape(len(images), 20, 64, 160, 3)
+            im_softmax_org = np.array(im_softmax_org).reshape(len(images), 200, 32, 32, 3)
             for x in range(0,len(images)):
                 arrs = postProcessing(images[x], im_softmax_org[x], image_shape)
                 answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
@@ -139,7 +139,7 @@ with tf.Session() as sess:
             [tf.nn.softmax(logits)],
             {keep_prob: 0.001, input_image: images})
         print(np.array(im_softmax_org).shape)
-        im_softmax_org = np.array(im_softmax_org).reshape(len(images), 20, 64, 160, 3)
+        im_softmax_org = np.array(im_softmax_org).reshape(len(images), 200, 32, 32, 3)
         for x in range(0,len(images)):
             arrs = postProcessing(images[x], im_softmax_org[x], image_shape)
             seg_org.append(arrs)
