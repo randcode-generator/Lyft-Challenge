@@ -67,7 +67,7 @@ def windowImage(image, startx, starty, width, height,
             a.append(arr_img)
     return a
 
-filename = "1.png"
+filename = "0.png"
 with tf.Session() as sess:
     meta_graph.restore(sess, tf.train.latest_checkpoint('./model'))
     graph = sess.graph
@@ -82,6 +82,7 @@ with tf.Session() as sess:
     height = image_shape[0]
     arr_rgb = windowImage(rgb_image, startx, starty, width, height)
 
+    print(np.array(arr_rgb).shape)
     arr_rgb1 = np.array(arr_rgb).reshape((20*64, 160, 3))
 
     im_softmax_org = sess.run(
@@ -90,13 +91,21 @@ with tf.Session() as sess:
 
     print(np.array(im_softmax_org).shape)
 
-    im_soft_max1 = np.array(im_softmax_org[0][:, 1]).reshape(20, 64, 160)
+    im_soft_max1 = np.array(im_softmax_org[0][:, 0]).reshape(20, 64, 160)
 
-    v = verify(arr_rgb, (im_soft_max1 > 0.8).astype('uint8'))
+    v = verify(arr_rgb, (im_soft_max1 > 0.3).astype('uint8'))
     h=[]
     for i in v:
         h.append(np.vstack(i))
-    scipy.misc.imsave("output_road123.png", np.hstack(h))
+    scipy.misc.imsave("output_car.png", np.hstack(h))
+
+    im_soft_max1 = np.array(im_softmax_org[0][:, 1]).reshape(20, 64, 160)
+
+    v = verify(arr_rgb, (im_soft_max1 > 0.3).astype('uint8'))
+    h=[]
+    for i in v:
+        h.append(np.vstack(i))
+    scipy.misc.imsave("output_road.png", np.hstack(h))
 
     # segmentation = (arr_seg > .5).astype('uint8')
     # print(np.unique(np.array(segmentation)))
