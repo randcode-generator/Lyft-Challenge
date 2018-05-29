@@ -99,8 +99,6 @@ def postProcessing(arr_rgb, im_softmax_org, image_shape):
     im_soft_max_road = (im_soft_max_road > 0.5).astype('uint8')
     pRoad = padding(im_soft_max_road)
 
-    print(np.unique(np.array(pRoad)))
-    print(np.unique(np.array(pCar)))
     return (pCar, pRoad)
 
 video = ["0.png", "1.png"]
@@ -122,7 +120,7 @@ with tf.Session() as sess:
         arr_rgb = np.array(arr_rgb).reshape((20*64, 160, 3))
         images.append(arr_rgb)
 
-        if(len(images) == 2):
+        if(len(images) == 10):
             im_softmax_org = sess.run(
                 [tf.nn.softmax(logits)],
                 {keep_prob: 0.001, input_image: images})
