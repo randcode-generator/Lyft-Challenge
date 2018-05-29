@@ -26,10 +26,30 @@ answer_key = {}
 frame = 1
 
 meta_graph = tf.train.import_meta_graph("/tmp/model/vehicles.meta")
-image_shape = (96, 128)
+image_shape = (64, 160)
 total_size = image_shape[0]*image_shape[1]
 
 background_color = np.array([0, 0, 0, 0])
+
+def windowImage(image, startx, starty, width, height, 
+            isFilter=False, filter = [7, 0, 0], isCar = False):
+    if(isFilter):
+        background_color = np.array(filter)
+        gt_bg = np.all(image == background_color, axis=2).astype('uint8')
+        if(isCar):
+            gt_bg[495:] = False
+        image = gt_bg
+
+    a=[]
+    for i in range(0, 5):
+        for j in range(0, 4):
+            left = startx + (width * i)
+            top = starty + (height * j)
+            right = left + width
+            bottom = top + height
+            arr_img = image[top:bottom, left:right]
+            a.append(arr_img)
+    return a
 
 def postProcessing(im_softmax_org, image_shape):
     im_softmax = im_softmax_org[0][:, 0].reshape(image_shape[0], image_shape[1])
@@ -58,15 +78,20 @@ with tf.Session() as sess:
     keep_prob = graph.get_tensor_by_name('keep_prob:0')
 
     for rgb_frame in video:
-        image = scipy.misc.imresize(rgb_frame, image_shape)
-        images.append(image)
+        startx = 0
+        starty = 264
+        width = image_shape[1]
+        height = image_shape[0]
+        arr_rgb = windowImage(rgb_frame, startx, starty, width, height)
+        arr_rgb = np.array(arr_rgb).reshape((20*64, 160, 3))
+        images.append(arr_rgb)
 
         if(len(images) == 25):
             im_softmax_org = sess.run(
                 [tf.nn.softmax(logits)],
                 {keep_prob: 0.001, input_image: images})
 
-            im_softmax_org = np.array(im_softmax_org).reshape(len(images), total_size, 3)
+            im_softmax_org = np.array(im_softmax_org).reshape(len(images), 64, 160, 3)
             for x in range(0,len(images)):
                 arrs = postProcessing([im_softmax_org[x]], image_shape)
                 answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
