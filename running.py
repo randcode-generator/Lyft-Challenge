@@ -92,7 +92,7 @@ def postProcessing(arr_rgb, im_softmax_org, image_shape):
     print(np.array(im_softmax_org).shape)
     print(np.array(im_softmax_org[:, :, :, 0]).shape)
     im_soft_max_car = np.array(im_softmax_org[:, :, :, 0])
-    im_soft_max_car = (im_soft_max_car > 0.3).astype('uint8')
+    im_soft_max_car = (im_soft_max_car > 0.5).astype('uint8')
     pCar = padding(im_soft_max_car)
 
     im_soft_max_road = np.array(im_softmax_org[:, :, :, 1])
@@ -103,6 +103,8 @@ def postProcessing(arr_rgb, im_softmax_org, image_shape):
 
 video = ["0.png", "1.png"]
 images = []
+images_org = []
+seg_org = []
 with tf.Session() as sess:
     meta_graph.restore(sess, tf.train.latest_checkpoint('./model'))
     graph = sess.graph
@@ -112,6 +114,7 @@ with tf.Session() as sess:
 
     for filename in video:
         rgb_frame=scipy.misc.imread(filename)
+        images_org.append(rgb_frame)
         startx = 0
         starty = 264
         width = image_shape[1]
@@ -132,3 +135,29 @@ with tf.Session() as sess:
                 frame+=1
 
             images.clear()
+        im_softmax_org = sess.run(
+            [tf.nn.softmax(logits)],
+            {keep_prob: 0.001, input_image: images})
+        print(np.array(im_softmax_org).shape)
+        im_softmax_org = np.array(im_softmax_org).reshape(len(images), 20, 64, 160, 3)
+        for x in range(0,len(images)):
+            arrs = postProcessing(images[x], im_softmax_org[x], image_shape)
+            seg_org.append(arrs)
+            answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
+            frame+=1
+
+gt_bg = np.array(seg_org[0][0])
+gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
+mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
+mask = scipy.misc.toimage(mask, mode="RGBA")
+image = scipy.misc.toimage(np.array(images_org[0]))
+image.paste(mask, box=None, mask=mask)
+scipy.misc.imsave("final_car_2.png", np.array(image))
+
+gt_bg = np.array(seg_org[0][1])
+gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
+mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
+mask = scipy.misc.toimage(mask, mode="RGBA")
+image = scipy.misc.toimage(np.array(images_org[0]))
+image.paste(mask, box=None, mask=mask)
+scipy.misc.imsave("final_road_2.png", np.array(image))
