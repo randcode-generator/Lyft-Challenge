@@ -100,7 +100,7 @@ with tf.Session() as sess:
         arr_rgb = np.array(arr_rgb).reshape((20*64, 160, 3))
         images.append(arr_rgb)
 
-        if(len(images) == 25):
+        if(len(images) == 15):
             im_softmax_org = sess.run(
                 [tf.nn.softmax(logits)],
                 {keep_prob: 0.001, input_image: images})
