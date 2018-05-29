@@ -118,7 +118,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         print("EPOCH {}...".format(e))
         print("Loss = {:.3f}".format(total_loss))
         
-        if (e > 4): 
+        if (e >= 2): 
             saver = tf.train.Saver()
             saver.save(sess, './model'+ str(e) + '_' + str("{:.2f}".format(total_loss)) +'/vehicles')
             print("model saved")
