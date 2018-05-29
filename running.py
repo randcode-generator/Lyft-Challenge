@@ -31,6 +31,27 @@ total_size = image_shape[0]*image_shape[1]
 
 background_color = np.array([0, 0, 0, 0])
 
+def padding(arr_seg):
+    c = 0
+    a = []
+    for _ in range(0, 5):
+        b = []
+        for _ in range(0, 4):
+            gt_bg = np.array(arr_seg[c])
+            b.append(gt_bg)
+            c += 1
+        a.append(b)
+    h=[]
+    for i in a:
+        h.append(np.vstack(i))
+    f = np.hstack(h)
+    print(np.array(f).shape)
+    g1 = np.zeros((264, 800)).astype('uint8')
+    g2 = f.astype('uint8')
+    g3 = np.zeros((80, 800)).astype('uint8')
+    d = np.vstack((g1, g2, g3)).astype('uint8')
+    return d
+
 def windowImage(image, startx, starty, width, height, 
             isFilter=False, filter = [7, 0, 0], isCar = False):
     if(isFilter):
@@ -52,22 +73,15 @@ def windowImage(image, startx, starty, width, height,
     return a
 
 def postProcessing(im_softmax_org, image_shape):
-    im_softmax = im_softmax_org[0][:, 0].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax >= 1.0).reshape(image_shape[0], image_shape[1], 1)
-    mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
-    mask = scipy.misc.toimage(mask, mode="RGBA")
-    street_im = scipy.misc.imresize(mask, (600,800))
-    t_f_vehicle_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
-    t_f_vehicle_array[496:] = 0
-    
-    im_softmax = im_softmax_org[0][:, 1].reshape(image_shape[0], image_shape[1])
-    segmentation = (im_softmax >= 1.0).reshape(image_shape[0], image_shape[1], 1)
-    mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
-    mask = scipy.misc.toimage(mask, mode="RGBA")
-    street_im = scipy.misc.imresize(mask, (600,800))
-    t_f_road_array = np.invert(np.all(street_im == background_color, axis=2)).astype('uint8')
-    
-    return (t_f_vehicle_array, t_f_road_array)
+    im_soft_max_car = np.array(im_softmax_org[:, :, :, 0])
+    im_soft_max_car = (im_soft_max_car > 0.5).astype('uint8')
+    pCar = padding(im_soft_max_car)
+
+    im_soft_max_road = np.array(im_softmax_org[:, :, :, 1])
+    im_soft_max_road = (im_soft_max_road > 0.5).astype('uint8')
+    pRoad = padding(im_soft_max_road)
+
+    return (pCar, pRoad)
 
 images = []
 with tf.Session() as sess:
@@ -91,7 +105,7 @@ with tf.Session() as sess:
                 [tf.nn.softmax(logits)],
                 {keep_prob: 0.001, input_image: images})
 
-            im_softmax_org = np.array(im_softmax_org).reshape(len(images), 64, 160, 3)
+            im_softmax_org = np.array(im_softmax_org).reshape(len(images), 20, 64, 160, 3)
             for x in range(0,len(images)):
                 arrs = postProcessing([im_softmax_org[x]], image_shape)
                 answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
@@ -103,7 +117,7 @@ with tf.Session() as sess:
         im_softmax_org = sess.run(
             [tf.nn.softmax(logits)],
             {keep_prob: 0.001, input_image: images})
-        im_softmax_org = np.array(im_softmax_org).reshape(len(images), total_size, 3)
+        im_softmax_org = np.array(im_softmax_org).reshape(len(images), 20, 64, 160, 3)
         for x in range(0,len(images)):
             arrs = postProcessing([im_softmax_org[x]], image_shape)
             answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
