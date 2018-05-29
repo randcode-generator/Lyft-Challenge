@@ -45,7 +45,6 @@ def padding(arr_seg):
     for i in a:
         h.append(np.vstack(i))
     f = np.hstack(h)
-    print(np.array(f).shape)
     g1 = np.zeros((264, 800)).astype('uint8')
     g2 = f.astype('uint8')
     g3 = np.zeros((80, 800)).astype('uint8')
