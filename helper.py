@@ -11,6 +11,10 @@ from glob import glob
 from urllib.request import urlretrieve
 from tqdm import tqdm
 
+#parameters
+width_blocks = 5
+height_blocks = 4
+total_blocks = width_blocks * height_blocks
 
 class DLProgress(tqdm):
     last_block = 0
@@ -68,8 +72,8 @@ def windowImage(image, startx, starty, width, height,
         image = gt_bg
 
     a=[]
-    for i in range(0, 5):
-        for j in range(0, 4):
+    for i in range(0, width_blocks):
+        for j in range(0, height_blocks):
             left = startx + (width * i)
             top = starty + (height * j)
             right = left + width
@@ -109,7 +113,7 @@ def gen_batch_function(data_folder, image_shape):
                 seg_image = scipy.misc.imread(seg_image_file)
 
                 arr_rgb = windowImage(rgb_image, startx, starty, width, height)
-                arr_rgb = np.array(arr_rgb).reshape(20 * 64, 160, 3)
+                arr_rgb = np.array(arr_rgb).reshape(total_blocks * image_shape[0], image_shape[1], 3)
 
                 arr_seg_car = windowImage(seg_image, startx, starty, width, height, 
                     isFilter = True, filter = [10, 0, 0], isCar = True)
@@ -123,7 +127,7 @@ def gen_batch_function(data_folder, image_shape):
                 h2 = np.array(arr_seg_road).flatten()
                 h3 = np.array(np.invert(orPixels)).flatten()
                 arr_seg = np.vstack((h1, h2, h3)).T
-                arr_seg = arr_seg.reshape((20 * 64, 160, 3))
+                arr_seg = arr_seg.reshape((total_blocks * image_shape[0], image_shape[1], 3))
 
                 rgb_images.append(arr_rgb)
                 seg_images.append(arr_seg)

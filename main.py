@@ -5,6 +5,13 @@ import warnings
 from distutils.version import LooseVersion
 import datetime
 
+#parameters
+epochs = 10
+batch_size = 10
+num_classes = 3
+image_shape = (64, 160)
+data_dir = '/tmp/data'
+
 # Check TensorFlow Version
 assert LooseVersion(tf.__version__) >= LooseVersion('1.0'), 'Please use TensorFlow version 1.0 or newer.  You are using {}'.format(tf.__version__)
 print('TensorFlow Version: {}'.format(tf.__version__))
@@ -125,9 +132,6 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
 
 def run():
     print("starting")
-    num_classes = 3
-    image_shape = (64, 160)
-    data_dir = '/tmp/data'
 
     # Download pretrained vgg model
     helper.maybe_download_pretrained_vgg(data_dir)
@@ -150,8 +154,6 @@ def run():
         print("optimize")
         
         # TODO: Train NN using the train_nn function
-        epochs = 10
-        batch_size = 10
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
         print("train_nn")
 
