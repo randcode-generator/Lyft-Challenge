@@ -146,13 +146,13 @@ def run():
         print("optimize")
         
         # TODO: Train NN using the train_nn function
-        epochs = 1
-        batch_size = 16
+        epochs = 3
+        batch_size = 5
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
         print("train_nn")
 
         saver = tf.train.Saver()
-        saver.save(sess, './vehicles')
+        saver.save(sess, './model/vehicles')
         print("model saved")
 
 if __name__ == '__main__':

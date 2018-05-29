@@ -78,6 +78,23 @@ def windowImage(image, startx, starty, width, height,
             a.append(arr_img)
     return a
 
+def verify(arr_rgb, arr_seg):
+    c = 0
+    a = []
+    for _ in range(0, 5):
+        b = []
+        for _ in range(0, 4):
+            gt_bg = np.array(arr_seg[c])
+            gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
+            mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
+            mask = scipy.misc.toimage(mask, mode="RGBA")
+            image = scipy.misc.toimage(arr_rgb[c])
+            image.paste(mask, box=None, mask=mask)
+            b.append(np.array(image))
+            c += 1
+        a.append(b)
+    return a
+
 def gen_batch_function(data_folder, image_shape):
     """
     Generate function to create batches of training data
@@ -93,9 +110,9 @@ def gen_batch_function(data_folder, image_shape):
         """
         rgb_paths = glob(os.path.join(data_folder, 'CameraRGB', '*.png'))
         random.shuffle(rgb_paths)
-        rgb_images = []
-        seg_images = []
         for batch_i in range(0, len(rgb_paths), batch_size):
+            rgb_images = []
+            seg_images = []
             startx = 0
             starty = 264
             width = image_shape[1]
@@ -105,10 +122,12 @@ def gen_batch_function(data_folder, image_shape):
                 filename, _ = os.path.splitext(filename_w_ext)
                 seg_image_file = os.path.join(data_folder, 'CameraSeg', filename+".png")
 
+                print(rgb_image_file)
                 rgb_image = scipy.misc.imread(rgb_image_file)
                 seg_image = scipy.misc.imread(seg_image_file)
 
                 arr_rgb = windowImage(rgb_image, startx, starty, width, height)
+                arr_rgb = np.array(arr_rgb).reshape((20*64, 160, 3))
                 arr_seg_car = windowImage(seg_image, startx, starty, width, height, 
                     isFilter = True, filter = [10, 0, 0], isCar = True)
 
@@ -121,9 +140,21 @@ def gen_batch_function(data_folder, image_shape):
                 h2 = np.array(arr_seg_road).flatten()
                 h3 = np.array(np.invert(orPixels)).flatten()
                 arr_seg = np.vstack((h1, h2, h3)).T
-                arr_seg = arr_seg.reshape((20, 64, 160, 3))
+                arr_seg = arr_seg.reshape((20*64, 160, 3))
 
                 rgb_images.append(arr_rgb)
                 seg_images.append(arr_seg)
-        yield np.array(arr_rgb), np.array(arr_seg)
+
+            print("lol ", np.array(rgb_images).shape)
+            print("lol ", np.array(seg_images).shape)
+
+            print(np.array(seg_images[0][:,:,0]).reshape(20, 64,160).shape)
+            a = verify(np.array(rgb_images[0]).reshape(20, 64, 160, 3), np.array(seg_images[0][:,:,1]).reshape(20, 64,160))
+            print(np.array(a).shape)
+            h=[]
+            for i in a:
+                h.append(np.vstack(i))
+            scipy.misc.imsave("output_road.png", np.hstack(h))
+            
+            yield np.array(rgb_images), np.array(seg_images)
     return get_batches_fn
