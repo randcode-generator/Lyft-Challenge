@@ -93,9 +93,9 @@ def gen_batch_function(data_folder, image_shape):
         """
         rgb_paths = glob(os.path.join(data_folder, 'CameraRGB', '*.png'))
         random.shuffle(rgb_paths)
-        rgb_images = []
-        seg_images = []
         for batch_i in range(0, len(rgb_paths), batch_size):
+            rgb_images = []
+            seg_images = []
             startx = 0
             starty = 264
             width = image_shape[1]
