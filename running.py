@@ -39,22 +39,24 @@ meta_graph = tf.train.import_meta_graph("/tmp/model/vehicles.meta")
 background_color = np.array([0, 0, 0, 0])
 
 def padding(arr_seg):
-    startx = 0
-    starty = 264
-    size = np.array(arr_seg).shape
-    count = 0
-    height = size[1]
-    width = size[2]
-    mask = np.zeros((600, 800))
-    for i in range(0, 5):
-        for j in range(0, 2):
-            left = startx + (i * width)
-            top = starty + (j * height)
-            right = left + width
-            bottom = top + height
-            mask[top:bottom, left:right] = arr_seg[count]
-            count += 1
-    return mask.astype('uint8')
+    c = 0
+    a = []
+    for _ in range(0, width_blocks):
+        b = []
+        for _ in range(0, height_blocks):
+            gt_bg = np.array(arr_seg[c])
+            b.append(gt_bg)
+            c += 1
+        a.append(b)
+    h=[]
+    for i in a:
+        h.append(np.vstack(i))
+    f = np.hstack(h)
+    g1 = np.zeros((264, 800)).astype('uint8')
+    g2 = f.astype('uint8')
+    g3 = np.zeros((80, 800)).astype('uint8')
+    d = np.vstack((g1, g2, g3)).astype('uint8')
+    return d
 
 def windowImage(image, startx, starty, width, height):
     a=[]
