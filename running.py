@@ -4,6 +4,7 @@ from PIL import Image
 from io import BytesIO, StringIO
 import tensorflow as tf
 import scipy.misc
+import cv2
 
 #parameters
 image_shape = (128, 160)
@@ -22,10 +23,8 @@ if file == 'running.py':
 
 # Define encoder function
 def encode(array):
-	pil_img = Image.fromarray(array)
-	buff = BytesIO()
-	pil_img.save(buff, format="PNG")
-	return base64.b64encode(buff.getvalue()).decode("utf-8")
+	_, buffer = cv2.imencode('.png', array)
+	return base64.b64encode(buffer).decode("utf-8")
 
 video = skvideo.io.vread(file)
 
