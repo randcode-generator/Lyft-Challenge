@@ -134,6 +134,10 @@ def gen_batch_function(data_folder, image_shape):
                 arr_seg_road = windowImage(seg_image, startx, starty, width, height, 
                     isFilter = True, filter = [7, 0, 0], isCar = False)
                 
+                arr_seg_lanelines = windowImage(seg_image, startx, starty, width, height, 
+                    isFilter = True, filter = [6, 0, 0], isCar = False)
+                
+                arr_seg_road = np.logical_or(arr_seg_road, arr_seg_lanelines)
                 orPixels = np.logical_or(arr_seg_car, arr_seg_road)
 
                 h1 = np.array(arr_seg_car).flatten()
@@ -155,6 +159,14 @@ def gen_batch_function(data_folder, image_shape):
             for i in a:
                 h.append(np.vstack(i))
             scipy.misc.imsave("output_road.png", np.hstack(h))
+
+            print(np.array(seg_images[0][:,:,0]).reshape(20, 64,160).shape)
+            a = verify(np.array(rgb_images[0]).reshape(20, 64, 160, 3), np.array(seg_images[0][:,:,0]).reshape(20, 64,160))
+            print(np.array(a).shape)
+            h=[]
+            for i in a:
+                h.append(np.vstack(i))
+            scipy.misc.imsave("output_car.png", np.hstack(h))
             
             yield np.array(rgb_images), np.array(seg_images)
     return get_batches_fn
