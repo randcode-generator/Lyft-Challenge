@@ -120,7 +120,11 @@ def gen_batch_function(data_folder, image_shape):
 
                 arr_seg_road = windowImage(seg_image, startx, starty, width, height, 
                     isFilter = True, filter = [7, 0, 0], isCar = False)
+
+                arr_seg_lanelines = windowImage(seg_image, startx, starty, width, height, 
+                    isFilter = True, filter = [6, 0, 0], isCar = False)
                 
+                arr_seg_road = np.logical_or(arr_seg_road, arr_seg_lanelines)
                 orPixels = np.logical_or(arr_seg_car, arr_seg_road)
 
                 h1 = np.array(arr_seg_car).flatten()
