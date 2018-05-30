@@ -11,8 +11,8 @@ width_blocks = 5
 height_blocks = 2
 total_blocks = width_blocks * height_blocks
 epoch = 15
-car_prob_thres = 0.5
-road_prob_thres = 0.5
+car_prob_thres = 0.2
+road_prob_thres = 0.96
 
 file = sys.argv[-1]
 
