@@ -11,6 +11,10 @@ from glob import glob
 from urllib.request import urlretrieve
 from tqdm import tqdm
 
+#parameters
+width_blocks = 5
+height_blocks = 2
+total_blocks = width_blocks * height_blocks
 
 class DLProgress(tqdm):
     last_block = 0
@@ -68,8 +72,8 @@ def windowImage(image, startx, starty, width, height,
         image = gt_bg
 
     a=[]
-    for i in range(0, 5):
-        for j in range(0, 4):
+    for i in range(0, width_blocks):
+        for j in range(0, height_blocks):
             left = startx + (width * i)
             top = starty + (height * j)
             right = left + width
@@ -81,9 +85,9 @@ def windowImage(image, startx, starty, width, height,
 def verify(arr_rgb, arr_seg):
     c = 0
     a = []
-    for _ in range(0, 5):
+    for _ in range(0, width_blocks):
         b = []
-        for _ in range(0, 4):
+        for _ in range(0, height_blocks):
             gt_bg = np.array(arr_seg[c])
             gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
             mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
@@ -126,7 +130,7 @@ def gen_batch_function(data_folder, image_shape):
                 seg_image = scipy.misc.imread(seg_image_file)
 
                 arr_rgb = windowImage(rgb_image, startx, starty, width, height)
-                arr_rgb = np.array(arr_rgb).reshape(20 * 64, 160, 3)
+                arr_rgb = np.array(arr_rgb).reshape(total_blocks * image_shape[0], image_shape[1], 3)
 
                 arr_seg_car = windowImage(seg_image, startx, starty, width, height, 
                     isFilter = True, filter = [10, 0, 0], isCar = True)
@@ -144,7 +148,7 @@ def gen_batch_function(data_folder, image_shape):
                 h2 = np.array(arr_seg_road).flatten()
                 h3 = np.array(np.invert(orPixels)).flatten()
                 arr_seg = np.vstack((h1, h2, h3)).T
-                arr_seg = arr_seg.reshape((20 * 64, 160, 3))
+                arr_seg = arr_seg.reshape((total_blocks * image_shape[0], image_shape[1], 3))
 
                 rgb_images.append(arr_rgb)
                 seg_images.append(arr_seg)
@@ -152,16 +156,16 @@ def gen_batch_function(data_folder, image_shape):
             print("lol ", np.array(rgb_images).shape)
             print("lol ", np.array(seg_images).shape)
 
-            print(np.array(seg_images[0][:,:,0]).reshape(20, 64,160).shape)
-            a = verify(np.array(rgb_images[0]).reshape(20, 64, 160, 3), np.array(seg_images[0][:,:,1]).reshape(20, 64,160))
+            print(np.array(seg_images[0][:,:,0]).reshape(total_blocks, image_shape[0], image_shape[1]).shape)
+            a = verify(np.array(rgb_images[0]).reshape(total_blocks, image_shape[0], image_shape[1], 3), np.array(seg_images[0][:,:,1]).reshape(total_blocks, image_shape[0],image_shape[1]))
             print(np.array(a).shape)
             h=[]
             for i in a:
                 h.append(np.vstack(i))
             scipy.misc.imsave("output_road.png", np.hstack(h))
 
-            print(np.array(seg_images[0][:,:,0]).reshape(20, 64,160).shape)
-            a = verify(np.array(rgb_images[0]).reshape(20, 64, 160, 3), np.array(seg_images[0][:,:,0]).reshape(20, 64,160))
+            print(np.array(seg_images[0][:,:,0]).reshape(total_blocks, image_shape[0], image_shape[1]).shape)
+            a = verify(np.array(rgb_images[0]).reshape(total_blocks, image_shape[0], image_shape[1], 3), np.array(seg_images[0][:,:,0]).reshape(total_blocks, image_shape[0], image_shape[1]))
             print(np.array(a).shape)
             h=[]
             for i in a:
