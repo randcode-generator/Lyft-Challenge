@@ -9,7 +9,6 @@ import datetime
 epochs = 10
 batch_size = 5
 num_classes = 3
-image_shape = (128, 160)
 data_dir = '/tmp/data'
 
 # Check TensorFlow Version
@@ -140,7 +139,7 @@ def run():
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
         # Create function to get batches
-        get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'Train'), image_shape)
+        get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'Train'))
 
         # TODO: Build NN using load_vgg, layers, and optimize function
         input_image, keep_prob, layer3, layer4, layer7 = load_vgg(sess, vgg_path)

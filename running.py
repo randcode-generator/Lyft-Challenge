@@ -7,8 +7,13 @@ import scipy.misc
 import cv2
 
 #parameters
-image_shape = (128, 160)
-width_blocks = 5
+cropped_height = 320
+cropped_width = 800
+resized_height = 128
+resized_width = 320
+block_width = 160
+block_height = 64
+width_blocks = 2
 height_blocks = 2
 total_blocks = width_blocks * height_blocks
 epoch = 15
@@ -51,7 +56,8 @@ def padding(arr_seg):
     for i in a:
         h.append(np.vstack(i))
     f = np.hstack(h)
-    g1 = np.zeros((264, 800)).astype('uint8')
+    f = cv2.resize(f,(cropped_width, cropped_height))
+    g1 = np.zeros((200, 800)).astype('uint8')
     g2 = f.astype('uint8')
     g3 = np.zeros((80, 800)).astype('uint8')
     d = np.vstack((g1, g2, g3)).astype('uint8')
@@ -69,7 +75,7 @@ def windowImage(image, startx, starty, width, height):
             a.append(arr_img)
     return a
 
-def postProcessing(arr_rgb, im_softmax_org, image_shape):
+def postProcessing(arr_rgb, im_softmax_org):
     im_soft_max_car = np.array(im_softmax_org[:, :, :, 0])
     im_soft_max_car = (im_soft_max_car > car_prob_thres).astype('uint8')
     pCar = padding(im_soft_max_car)
@@ -89,12 +95,11 @@ with tf.Session() as sess:
     keep_prob = graph.get_tensor_by_name('keep_prob:0')
 
     for rgb_frame in video:
-        startx = 0
-        starty = 264
-        width = image_shape[1]
-        height = image_shape[0]
-        arr_rgb = windowImage(rgb_frame, startx, starty, width, height)
-        arr_rgb = np.array(arr_rgb).reshape((total_blocks*image_shape[0], image_shape[1], 3))
+        rgb_frame = rgb_frame[200:200+cropped_height, 0:0+cropped_width, :]
+        rgb_frame = cv2.resize(rgb_frame, (resized_width, resized_height))
+
+        arr_rgb = windowImage(rgb_frame, 0, 0, block_width, block_height)
+        arr_rgb = np.array(arr_rgb).reshape(total_blocks * block_height, block_width, 3)
         images.append(arr_rgb)
 
         if(len(images) == epoch):
@@ -102,9 +107,9 @@ with tf.Session() as sess:
                 [tf.nn.softmax(logits)],
                 {keep_prob: 0.001, input_image: images})
 
-            im_softmax_org = np.array(im_softmax_org).reshape(len(images), total_blocks, image_shape[0], image_shape[1], 3)
+            im_softmax_org = np.array(im_softmax_org).reshape(len(images), total_blocks, block_height, block_width, 3)
             for x in range(0,len(images)):
-                arrs = postProcessing(images[x], im_softmax_org[x], image_shape)
+                arrs = postProcessing(images[x], im_softmax_org[x])
                 answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
                 frame+=1
 
@@ -114,9 +119,9 @@ with tf.Session() as sess:
         im_softmax_org = sess.run(
             [tf.nn.softmax(logits)],
             {keep_prob: 0.001, input_image: images})
-        im_softmax_org = np.array(im_softmax_org).reshape(len(images), total_blocks, image_shape[0], image_shape[1], 3)
+        im_softmax_org = np.array(im_softmax_org).reshape(len(images), total_blocks, block_height, block_width, 3)
         for x in range(0,len(images)):
-            arrs = postProcessing(images[x], im_softmax_org[x], image_shape)
+            arrs = postProcessing(images[x], im_softmax_org[x])
             answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
             frame+=1
 
