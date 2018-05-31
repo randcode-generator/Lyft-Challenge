@@ -74,7 +74,7 @@ def padding(arr_seg):
     print(np.array(f).shape)
     f = cv2.resize(f,(cropped_width, cropped_height))
 
-    g1 = np.zeros((264, 800)).astype('uint8')
+    g1 = np.zeros((200, 800)).astype('uint8')
     g2 = f.astype('uint8')
     g3 = np.zeros((80, 800)).astype('uint8')
     d = np.vstack((g1, g2, g3)).astype('uint8')
