@@ -11,11 +11,6 @@ cropped_height = 320
 cropped_width = 800
 resized_height = 128
 resized_width = 320
-block_width = 160
-block_height = 64
-width_blocks = 2
-height_blocks = 2
-total_blocks = width_blocks * height_blocks
 epoch = 15
 car_prob_thres = 0.1
 road_prob_thres = 0.96
@@ -40,39 +35,16 @@ meta_graph = tf.train.import_meta_graph("./model/vehicles.meta")
 background_color = np.array([0, 0, 0, 0])
 
 def verify(arr_rgb, arr_seg):
-    print(np.array(arr_rgb).shape, np.array(arr_seg).shape)
-    c = 0
-    a = []
-    for _ in range(0, width_blocks):
-        b = []
-        for _ in range(0, height_blocks):
-            gt_bg = np.array(arr_seg[c])
-            gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
-            mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
-            mask = scipy.misc.toimage(mask, mode="RGBA")
-            image = scipy.misc.toimage(arr_rgb[c])
-            image.paste(mask, box=None, mask=mask)
-            b.append(np.array(image))
-            c += 1
-        a.append(b)
-    return a
+    gt_bg = np.array(arr_seg)
+    gt_bg = gt_bg.reshape(*gt_bg.shape, 1)
+    mask = np.dot(gt_bg, np.array([[0, 255, 0, 127]]))
+    mask = scipy.misc.toimage(mask, mode="RGBA")
+    image = scipy.misc.toimage(arr_rgb)
+    image.paste(mask, box=None, mask=mask)
+    return image
 
 def padding(arr_seg):
-    c = 0
-    a = []
-    for _ in range(0, width_blocks):
-        b = []
-        for _ in range(0, height_blocks):
-            gt_bg = np.array(arr_seg[c])
-            b.append(gt_bg)
-            c += 1
-        a.append(b)
-    h=[]
-    for i in a:
-        h.append(np.vstack(i))
-    f = np.hstack(h)
-    print(np.array(f).shape)
-    f = cv2.resize(f,(cropped_width, cropped_height))
+    f = cv2.resize(arr_seg, (cropped_width, cropped_height))
 
     g1 = np.zeros((200, 800)).astype('uint8')
     g2 = f.astype('uint8')
@@ -80,27 +52,14 @@ def padding(arr_seg):
     d = np.vstack((g1, g2, g3)).astype('uint8')
     return d
 
-def windowImage(image, startx, starty, width, height, 
-            isFilter=False, filter = [7, 0, 0], isCar = False):
-    a=[]
-    for i in range(0, width_blocks):
-        for j in range(0, height_blocks):
-            left = startx + (width * i)
-            top = starty + (height * j)
-            right = left + width
-            bottom = top + height
-            arr_img = image[top:bottom, left:right]
-            a.append(arr_img)
-    return a
-
 def postProcessing(arr_rgb, im_softmax_org):
     print(np.array(im_softmax_org).shape)
-    print(np.array(im_softmax_org[:, :, :, 0]).shape)
-    im_soft_max_car = np.array(im_softmax_org[:, :, :, 0])
+    print(np.array(im_softmax_org[:, :, 0]).shape)
+    im_soft_max_car = np.array(im_softmax_org[:, :, 0])
     im_soft_max_car = (im_soft_max_car > car_prob_thres).astype('uint8')
     pCar = padding(im_soft_max_car)
 
-    im_soft_max_road = np.array(im_softmax_org[:, :, :, 1])
+    im_soft_max_road = np.array(im_softmax_org[:, :, 1])
     im_soft_max_road = (im_soft_max_road > road_prob_thres).astype('uint8')
     pRoad = padding(im_soft_max_road)
 
@@ -123,27 +82,25 @@ with tf.Session() as sess:
         rgb_frame = rgb_frame[200:200+cropped_height, 0:0+cropped_width, :]
         rgb_frame = cv2.resize(rgb_frame, (resized_width, resized_height))
 
-        arr_rgb = windowImage(rgb_frame, 0, 0, block_width, block_height)
-        arr_rgb = np.array(arr_rgb).reshape(total_blocks * block_height, block_width, 3)
-        images.append(arr_rgb)
+        images.append(rgb_frame)
 
         if(len(images) == epoch):
             im_softmax_org = sess.run(
                 [tf.nn.softmax(logits)],
                 {keep_prob: 0.001, input_image: images})
-            print(np.array(im_softmax_org).shape)
-            im_softmax_org = np.array(im_softmax_org).reshape(len(images), total_blocks, block_height, block_width, 3)
+            im_softmax_org = np.array(im_softmax_org).reshape(len(images), resized_height, resized_width, 3)
             for x in range(0,len(images)):
                 arrs = postProcessing(images[x], im_softmax_org[x])
                 answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
                 frame+=1
 
             images.clear()
+    
+    if(len(images) > 0):
         im_softmax_org = sess.run(
             [tf.nn.softmax(logits)],
             {keep_prob: 0.001, input_image: images})
-        print(np.array(im_softmax_org).shape)
-        im_softmax_org = np.array(im_softmax_org).reshape(len(images), total_blocks, block_height, block_width, 3)
+        im_softmax_org = np.array(im_softmax_org).reshape(len(images), resized_height, resized_width, 3)
         for x in range(0,len(images)):
             arrs = postProcessing(images[x], im_softmax_org[x])
             seg_org.append(arrs)
