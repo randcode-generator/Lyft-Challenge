@@ -13,11 +13,6 @@ from tqdm import tqdm
 import cv2
 
 #parameters
-block_width = 160
-block_height = 64
-width_blocks = 2
-height_blocks = 2
-total_blocks = width_blocks * height_blocks
 resized_height = 128
 resized_width = 320
 cropped_height = 320
@@ -75,19 +70,6 @@ def filterImage(image, filter = [7, 0, 0], isCar = False):
         gt_bg[296:] = 0.
     return gt_bg
 
-def windowImage(image, startx, starty, width, height):
-    a=[]
-    for i in range(0, width_blocks):
-        for j in range(0, height_blocks):
-            left = startx + (width * i)
-            top = starty + (height * j)
-            right = left + width
-            bottom = top + height
-            arr_img = image[top:bottom, left:right]
-            #scipy.misc.imsave("final_" + str(i) + "_" + str(j) + ".png", np.array(arr_img))
-            a.append(arr_img)
-    return a
-
 def gen_batch_function(data_folder):
     """
     Generate function to create batches of training data
@@ -125,32 +107,19 @@ def gen_batch_function(data_folder):
                 arr_seg_road = np.logical_or(arr_seg_road, arr_seg_lanelines).astype('uint8')
 
                 #RESIZE
-                rgb_image = cv2.resize(rgb_image, (resized_width, resized_height))
+                arr_rgb = cv2.resize(rgb_image, (resized_width, resized_height))
                 arr_seg_car = cv2.resize(arr_seg_car, (resized_width, resized_height))
                 arr_seg_road = cv2.resize(arr_seg_road, (resized_width, resized_height))
 
                 #ANYTHING NOT CAR OR ROAD
                 arr_everything_else = np.invert(np.logical_or(arr_seg_car, arr_seg_road))
 
-                #BREAK RGB INTO PARTS
-                arr_rgb = windowImage(rgb_image, 0, 0, block_width, block_height)
-                arr_rgb = np.array(arr_rgb).reshape(total_blocks * block_height, block_width, 3)
-
-                arr_seg_car = windowImage(arr_seg_car, 0, 0, block_width, block_height)
-                arr_seg_car = np.array(arr_seg_car).reshape(total_blocks * block_height, block_width)
-
-                arr_seg_road = windowImage(arr_seg_road, 0, 0, block_width, block_height)
-                arr_seg_road = np.array(arr_seg_road).reshape(total_blocks * block_height, block_width)
-
-                arr_everything_else = windowImage(arr_everything_else, 0, 0, block_width, block_height)
-                arr_everything_else = np.array(arr_everything_else).reshape(total_blocks * block_height, block_width)
-
                 #BREAK SEG_IMAGES INTO PARTS
                 h1 = np.array(arr_seg_car).flatten()
                 h2 = np.array(arr_seg_road).flatten()
                 h3 = np.array(arr_everything_else).flatten()
                 arr_seg = np.vstack((h1, h2, h3)).T
-                arr_seg = arr_seg.reshape((total_blocks * block_height, block_width, 3))
+                arr_seg = arr_seg.reshape((resized_height, resized_width, 3))
 
                 rgb_images.append(arr_rgb)
                 seg_images.append(arr_seg)
