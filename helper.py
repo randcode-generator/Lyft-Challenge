@@ -13,8 +13,8 @@ from tqdm import tqdm
 import cv2
 
 #parameters
-resized_height = 128
-resized_width = 320
+resized_height = 192
+resized_width = 480
 cropped_height = 320
 cropped_width = 800
 
