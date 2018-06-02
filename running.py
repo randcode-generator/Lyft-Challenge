@@ -9,8 +9,8 @@ import cv2
 #parameters
 cropped_height = 320
 cropped_width = 800
-resized_height = 128
-resized_width = 320
+resized_height = 192
+resized_width = 480
 epoch = 15
 car_prob_thres = 0.1
 road_prob_thres = 0.96
