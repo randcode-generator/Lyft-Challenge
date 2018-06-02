@@ -6,6 +6,7 @@ from distutils.version import LooseVersion
 import datetime
 
 #parameters
+keep_prob1 = 0.3
 epochs = 10
 batch_size = 5
 num_classes = 3
@@ -116,7 +117,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
                 feed_dict = {
                     input_image: image,
                     correct_label: seg,
-                    keep_prob: 0.001,
+                    keep_prob: keep_prob1,
                     learning_rate: 0.0001
                 })
             total_loss += loss
