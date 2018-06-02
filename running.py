@@ -73,7 +73,7 @@ with tf.Session() as sess:
         if(len(images) == epoch):
             im_softmax_org = sess.run(
                 [tf.nn.softmax(logits)],
-                {keep_prob: 0.1, input_image: images})
+                {keep_prob: 0.2, input_image: images})
 
             im_softmax_org = np.array(im_softmax_org).reshape(len(images), resized_height, resized_width, 3)
             for x in range(0,len(images)):
