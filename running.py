@@ -7,13 +7,14 @@ import scipy.misc
 import cv2
 
 #parameters
+car_prob_thres = 0.1
+road_prob_thres = 0.96
+keep_prob1 = 0.3
 cropped_height = 320
 cropped_width = 800
 resized_height = 192
 resized_width = 480
 epoch = 15
-car_prob_thres = 0.1
-road_prob_thres = 0.96
 
 file = sys.argv[-1]
 
@@ -73,7 +74,7 @@ with tf.Session() as sess:
         if(len(images) == epoch):
             im_softmax_org = sess.run(
                 [tf.nn.softmax(logits)],
-                {keep_prob: 0.3, input_image: images})
+                {keep_prob: keep_prob1, input_image: images})
 
             im_softmax_org = np.array(im_softmax_org).reshape(len(images), resized_height, resized_width, 3)
             for x in range(0,len(images)):
@@ -86,7 +87,7 @@ with tf.Session() as sess:
     if(len(images) > 0):
         im_softmax_org = sess.run(
             [tf.nn.softmax(logits)],
-            {keep_prob: 0.001, input_image: images})
+            {keep_prob: keep_prob1, input_image: images})
         im_softmax_org = np.array(im_softmax_org).reshape(len(images), resized_height, resized_width, 3)
         for x in range(0,len(images)):
             arrs = postProcessing(images[x], im_softmax_org[x])
