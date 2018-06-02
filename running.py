@@ -1,4 +1,4 @@
-import sys, skvideo.io, json, base64
+import sys, json, base64
 import numpy as np
 from PIL import Image
 from io import BytesIO, StringIO
@@ -27,7 +27,7 @@ def encode(array):
 	_, buffer = cv2.imencode('.png', array)
 	return base64.b64encode(buffer).decode("utf-8")
 
-video = skvideo.io.vread(file)
+cap = cv2.VideoCapture(file)
 
 answer_key = {}
 
@@ -65,24 +65,29 @@ with tf.Session() as sess:
     input_image = graph.get_tensor_by_name('image_input:0')
     keep_prob = graph.get_tensor_by_name('keep_prob:0')
 
-    for rgb_frame in video:
-        rgb_frame = rgb_frame[200:200+cropped_height, 0:0+cropped_width, :]
-        rgb_frame = cv2.resize(rgb_frame, (resized_width, resized_height))
+    while(cap.isOpened()):
+        ret, rgb_frame = cap.read()
+        if(ret==True):
+            rgb_frame = cv2.cvtColor(rgb_frame, cv2.COLOR_BGR2RGB)
+            rgb_frame = rgb_frame[200:200+cropped_height, 0:0+cropped_width, :]
+            rgb_frame = cv2.resize(rgb_frame, (resized_width, resized_height))
 
-        images.append(rgb_frame)
+            images.append(rgb_frame)
 
-        if(len(images) == epoch):
-            im_softmax_org = sess.run(
-                [tf.nn.softmax(logits)],
-                {keep_prob: keep_prob1, input_image: images})
+            if(len(images) == epoch):
+                im_softmax_org = sess.run(
+                    [tf.nn.softmax(logits)],
+                    {keep_prob: keep_prob1, input_image: images})
 
-            im_softmax_org = np.array(im_softmax_org).reshape(len(images), resized_height, resized_width, 3)
-            for x in range(0,len(images)):
-                arrs = postProcessing(images[x], im_softmax_org[x])
-                answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
-                frame+=1
+                im_softmax_org = np.array(im_softmax_org).reshape(len(images), resized_height, resized_width, 3)
+                for x in range(0,len(images)):
+                    arrs = postProcessing(images[x], im_softmax_org[x])
+                    answer_key[frame] = [encode(arrs[0]), encode(arrs[1])]
+                    frame+=1
 
-            images.clear()
+                images.clear()
+        else:
+            cap.release()
     
     if(len(images) > 0):
         im_softmax_org = sess.run(
