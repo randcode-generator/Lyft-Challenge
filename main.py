@@ -6,7 +6,7 @@ from distutils.version import LooseVersion
 import datetime
 
 #parameters
-keep_prob1 = 0.3
+keep_prob1 = 0.1
 epochs = 10
 batch_size = 5
 num_classes = 3

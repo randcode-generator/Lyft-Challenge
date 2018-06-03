@@ -9,7 +9,7 @@ import cv2
 #parameters
 car_prob_thres = 0.1
 road_prob_thres = 0.96
-keep_prob1 = 0.3
+keep_prob1 = 0.1
 cropped_height = 320
 cropped_width = 800
 resized_height = 192
