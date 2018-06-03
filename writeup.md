@@ -61,7 +61,7 @@ The model is configured as follows:
 
 ## Training
 1) [Download](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/vgg.zip) a VGG model that has been customized for FCN (Fully Convolutional Networks)
-2) Crop both RGB and Seg image from a `800x600` to `800x320`
+2) Crop both RGB and Seg image from `800x600` to `800x320` start at `y:200 and x:0`. Refer to `Resized image` below for example.
 3) Filter the Seg image for vehicle, road, and lane lines. (The lane lines and road is merged)
 4) Resize both RGB and Seg image to `480x192`
 5) Invert both road and vehicle to get not vehicle nor road image
@@ -70,9 +70,17 @@ The model is configured as follows:
 
 ## Interfacing
 1) Load trained model
-2) Crop image to `800x320`
+2) Crop image `800x600` to `800x320` start at `y:200 and x:0`
 3) Resize cropped image to `480x192`
 4) Pass image into the model
 5) Probabilities greater then `0.1` is accepted (set to 1) for vehicle and `0.96` for road. Everything else is rejected (set to 0)
 6) Since the image is only 0 and 1, we can consider this a black and white image. Resize the black and white image back to `800x320`
-7) Pad the image back to its original size `800x600`
+7) Pad the image with zeros back to its original size `800x600`
+
+# References
+## Resized image
+**Original**  
+![alt text](images/1.png "Original")
+
+**Cropped**  
+![alt text](images/cropped_1.png "Original")
