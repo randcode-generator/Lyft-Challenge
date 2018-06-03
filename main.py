@@ -88,7 +88,7 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
 
     return logits, train_op, cross_entropy_loss
 
-def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate):
+def train_nn(sess, epochs, batch_size, get_batches_fn1, get_batches_fn2, train_op, cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate):
     """
     Train neural network and print out the loss during training.
     :param sess: TF Session
@@ -112,7 +112,16 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     for e in range(epochs):
         total_loss = 0
         print("s", datetime.datetime.now())
-        for image, seg in get_batches_fn(batch_size):
+        for image, seg in get_batches_fn1(batch_size):
+            loss, _ = sess.run([cross_entropy_loss, train_op],
+                feed_dict = {
+                    input_image: image,
+                    correct_label: seg,
+                    keep_prob: keep_prob1,
+                    learning_rate: 0.0001
+                })
+            total_loss += loss
+        for image, seg in get_batches_fn2(batch_size):
             loss, _ = sess.run([cross_entropy_loss, train_op],
                 feed_dict = {
                     input_image: image,
@@ -140,7 +149,8 @@ def run():
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
         # Create function to get batches
-        get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'Train'))
+        get_batches_fn1 = helper.gen_batch_function(os.path.join(data_dir, 'Train1'))
+        get_batches_fn2 = helper.gen_batch_function(os.path.join(data_dir, 'Train2'))
 
         # TODO: Build NN using load_vgg, layers, and optimize function
         input_image, keep_prob, layer3, layer4, layer7 = load_vgg(sess, vgg_path)
@@ -154,7 +164,7 @@ def run():
         print("optimize")
         
         # TODO: Train NN using the train_nn function
-        train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
+        train_nn(sess, epochs, batch_size, get_batches_fn1, get_batches_fn2, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
         print("train_nn")
 
 if __name__ == '__main__':
